@@ -1,0 +1,56 @@
+[
+  {
+    "id": "btc_future_return_feature",
+    "title": "Future return accidentally used as model feature",
+    "source_type": "quant_backtest_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "expected_issues": ["lookahead"],
+    "severity": "critical",
+    "code": "df['future_return'] = df['close_usd'].pct_change().shift(-1)\nfeatures = ['future_return', 'volume_usd']\nmodel.fit(df[features], df['signal'])"
+  },
+  {
+    "id": "global_zscore_before_split",
+    "title": "Full-sample normalization before train/test split",
+    "source_type": "quant_backtest_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "expected_issues": ["normalization_leakage"],
+    "severity": "major",
+    "code": "df['z_volume'] = (df['volume_usd'] - df['volume_usd'].mean()) / df['volume_usd'].std()\ntrain = df[df['date'] < '2026-04-11']\ntest = df[df['date'] >= '2026-04-11']"
+  },
+  {
+    "id": "random_split_time_series",
+    "title": "Random split used for financial time series",
+    "source_type": "quant_backtest_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "expected_issues": ["temporal_split"],
+    "severity": "critical",
+    "code": "from sklearn.model_selection import train_test_split\ntrain, test = train_test_split(df, test_size=0.25, shuffle=True, random_state=7)"
+  },
+  {
+    "id": "missing_transaction_costs",
+    "title": "Backtest reports gross returns without costs",
+    "source_type": "quant_backtest_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "expected_issues": ["missing_costs"],
+    "severity": "major",
+    "code": "df['position'] = (df['close_usd'].pct_change() > 0).astype(int)\ndf['strategy_return'] = df['position'].shift(1) * df['close_usd'].pct_change()\nsharpe = df['strategy_return'].mean() / df['strategy_return'].std()"
+  },
+  {
+    "id": "honest_shifted_momentum",
+    "title": "Simple shifted momentum with explicit costs",
+    "source_type": "quant_backtest_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "expected_issues": [],
+    "severity": "none",
+    "code": "df['ret_1d'] = df['close_usd'].pct_change()\ndf['signal'] = (df['ret_1d'].rolling(3).mean().shift(1) > 0).astype(int)\ndf['turnover'] = df['signal'].diff().abs().fillna(0)\ndf['strategy_return'] = df['signal'].shift(1) * df['ret_1d'] - 0.001 * df['turnover']"
+  },
+  {
+    "id": "unsupported_claim",
+    "title": "Report claims state-of-the-art performance without baseline",
+    "source_type": "research_writeup",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "expected_issues": ["unsupported_claim"],
+    "severity": "minor",
+    "code": "The agentic strategy is clearly state-of-the-art and beats all alternatives. We omit baseline comparisons because the equity curve is visually compelling."
+  }
+]

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Adversarial AI Audit for Quant Research</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #17202a;
+      background: #f7f8fa;
+      line-height: 1.55;
+    }
+    header {
+      background: #102033;
+      color: white;
+      padding: 48px 24px 36px;
+    }
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 28px 24px 56px;
+    }
+    h1 {
+      max-width: 900px;
+      margin: 0 auto;
+      font-size: 40px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+    header p {
+      max-width: 900px;
+      margin: 16px auto 0;
+      color: #d9e3ee;
+      font-size: 18px;
+    }
+    section {
+      margin: 28px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border: 1px solid #dfe5ec;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px;
+      border-bottom: 1px solid #dfe5ec;
+      vertical-align: top;
+    }
+    th {
+      background: #edf2f7;
+    }
+    code {
+      background: #eef2f5;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+    .lede {
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Can LLMs Audit Quant Research?</h1>
+    <p>A working benchmark and prototype for adversarial AI review of financial backtests, integrating DARF and CORAX design patterns.</p>
+  </header>
+  <main>
+    <section>
+      <p class="lede">The project evaluates whether adversarial review systems can catch lookahead bias, leakage, invalid time-series splits, missing trading costs, and unsupported performance claims in quant research workflows.</p>
+    </section>
+
+    <section>
+      <h2>Integrated Systems</h2>
+      <table>
+        <tr><th>System</th><th>Role in this project</th></tr>
+        <tr><td>DARF</td><td>Cross-model adversarial review using blind briefs and gate decisions.</td></tr>
+        <tr><td>CORAX</td><td>Codex-on-Codex Santa Method review with a heterogeneous Sentinel for groupthink checks.</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>Working Artifact</h2>
+      <p>Run <code>python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json</code> to reproduce the benchmark metrics. The harness uses labeled financial-code cases and a bundled BTC data fixture.</p>
+    </section>
+
+    <section>
+      <h2>Evidence</h2>
+      <p>The current offline version reports precision, recall, and F1 for three review profiles: a single-pass baseline, a DARF-inspired cross-model profile, and a CORAX-inspired Santa Method plus Sentinel profile.</p>
+      <table>
+        <tr><th>Profile</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
+        <tr><td><code>single_llm_baseline</code></td><td>1.00</td><td>0.60</td><td>0.75</td></tr>
+        <tr><td><code>darf_cross_model</code></td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+        <tr><td><code>corax_santa_sentinel</code></td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>Limitations</h2>
+      <p>The deterministic harness is a reproducible scaffold. The next experiment should run live LLM reviewers, store raw outputs, and compare human labels, cost, latency, and failure modes.</p>
+    </section>
+  </main>
+</body>
+</html>
