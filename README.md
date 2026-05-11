@@ -1,6 +1,6 @@
 # DARF/CORAX Quant Audit
 
-本项目把 DARF / CORAX 的对抗式 AI 审查机制整理成一个可运行、可继续开发的量化研究审查框架。它现在包含两层内容：一层是可立即运行的 benchmark scaffold，另一层是已经搬进项目并做过路径参数化的 DARF / CORAX MCP 与 skill 逻辑。
+本项目把 DARF / CORAX 的对抗式 AI 审查机制整理成一个可运行、可继续开发的量化研究审查框架。它现在包含两层内容：一层是可直接运行的 benchmark 和离线 adapter，另一层是已经搬进项目并做过路径参数化的 DARF / CORAX MCP 与 skill 逻辑。
 
 ## 项目目标
 
@@ -10,7 +10,8 @@
 
 ## 当前已经有的内容
 
-- 一个可以直接运行的 deterministic benchmark scaffold。
+- 一个可以直接运行的 benchmark harness。
+- 三个可运行 reviewer adapter：`single_llm_baseline`、`darf`、`corax`。
 - 6 个初始审查案例，覆盖 lookahead、normalization leakage、temporal split、missing costs、clean case、unsupported claim。
 - 一个小型 BTC 真实数据样例，避免项目变成纯 synthetic demo。
 - DARF MCP server 代码、测试和 portable config。
@@ -47,24 +48,31 @@ DARF 是跨模型对抗审查：一个模型产出研究内容，流程把结论
 
 CORAX 是 Codex-native 审查：Codex Producer 产出，独立 Codex Reviewer 只看 blind brief 做 Santa Method review，再由 Claude Sentinel 检查同模型 groupthink 和共同盲区。对应代码主要在 `integrations/corax_mcp/`、`skills/corax/` 和 `commands/corax.md`。
 
-当前 benchmark scaffold 里的三个 profile 是这套系统的简化占位：
+当前 benchmark 里有两套运行入口：
+
+- `--adapter`：推荐入口，跑真正接入项目代码的 reviewer adapter。
+- `--profile`：兼容旧 deterministic profile，用于对照和快速调试。
+
+三个 adapter 的含义：
 
 - `single_llm_baseline`：模拟普通单轮审查。
-- `darf_cross_model`：模拟 DARF 式更严格的跨模型审查。
-- `corax_santa_sentinel`：模拟 CORAX 式 reviewer + sentinel 审查。
+- `darf`：运行离线 DARF adapter，调用 `integrations/darf_mcp` 里的 normalization MCP scan，并按 blind review 方式隐藏 label 字段。
+- `corax`：运行离线 CORAX adapter，调用 `integrations/corax_mcp` 里的 lookahead scan、normalization scan 和 blind brief stripper，并加入 Sentinel claim check。
 
-后续需要把这三个 profile 从 deterministic 规则替换成真实 agent adapter。
+这一步已经把 DARF / CORAX 的本地模块接到 benchmark 里。现在还没有接外部 LLM API、Codex subprocess 或 Claude Sentinel live call，所以它是一个可复现的 offline prototype，不需要 API key 就能跑。
 
 ## 快速运行
 
-基础 benchmark scaffold 只依赖 Python 标准库，Python 3.11+ 即可。
+基础 benchmark 和离线 adapter 只依赖 Python 标准库，Python 3.11+ 即可。
 
 ```bash
 python -m unittest discover -s tests
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
+python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter darf
+python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax
 ```
 
-第二条命令会输出每个 case 的审查结果，以及三个 profile 的 precision / recall / F1。
+CLI 会输出每个 case 的审查结果、raw adapter output，以及 precision / recall / F1。默认不传 `--adapter` 时会依次运行 `single_llm_baseline`、`darf`、`corax`。
 
 ## 运行 DARF MCP 测试
 
@@ -84,6 +92,8 @@ python -m pytest tests
 当前已验证结果：
 
 - `python -m unittest discover -s tests`：4 passed。
+- `python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter darf`：可运行。
+- `python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax`：可运行。
 - `cd integrations/darf_mcp && python -m pytest tests`：103 passed。
 
 ## 配置方式
@@ -107,7 +117,7 @@ python -m pytest tests
 
 ## 当前限制
 
-- `src/quant_audit_benchmark/` 仍是 deterministic scaffold，还没有真正调用 LLM / Codex / Sentinel。
+- `src/quant_audit_benchmark/` 已接入离线 DARF / CORAX adapter，但还没有真正调用外部 LLM / Codex subprocess / Claude Sentinel。
 - CORAX MCP 代码已经放进项目，但 producer / reviewer subprocess wrapper 还缺直接测试。
 - Claude Sentinel 的执行逻辑主要在 `commands/corax.md` 和 `skills/corax/references/sentinel-protocol.md` 中，还没有封装成一个独立 Python adapter。
 - lessons DB migration 脚本还需要整理进项目，才能完整支持 CORAX lessons 写入流程。
@@ -115,10 +125,8 @@ python -m pytest tests
 
 ## 下一步开发
 
-- 设计 `ReviewerAdapter.review(case) -> ReviewResult` 统一接口。
-- 实现 single LLM baseline adapter。
-- 实现 DARF blind brief + challenger adapter。
-- 实现 CORAX reviewer + Sentinel adapter。
+- 把 DARF adapter 从 offline scan 升级成 blind brief + live challenger。
+- 把 CORAX adapter 从 offline scan 升级成 live Codex Reviewer + Claude Sentinel。
 - 把 raw model output、parsed JSON、latency、cost 都保存到 `runs/` 或 `.runtime/`。
 - 把 ground-truth label 从 `cases.json` 拆到单独 annotation 文件。
 - 增加更多真实 notebook / script case。

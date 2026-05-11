@@ -4,19 +4,19 @@
 
 项目当前有两条线：
 
-- benchmark 线：`src/quant_audit_benchmark/` 负责加载 case、运行审查 profile、计算 precision / recall / F1。
-- agent 线：`integrations/`、`skills/`、`commands/` 放入 DARF / CORAX 的完整审查机制，后续需要接到 benchmark adapter。
+- benchmark 线：`src/quant_audit_benchmark/` 负责加载 case、运行 reviewer adapter、计算 precision / recall / F1。
+- agent 线：`integrations/`、`skills/`、`commands/` 放入 DARF / CORAX 的完整审查机制，其中一部分已经通过 offline adapter 接到 benchmark。
 
 ```mermaid
 flowchart TD
     A["benchmark_cases/cases.json"] --> B["AuditCase loader"]
-    B --> C["Reviewer profile / adapter"]
+    B --> C["ReviewerAdapter"]
     C --> D["Findings"]
     D --> E["Compare with labels"]
     E --> F["Metrics and failure analysis"]
 
-    G["DARF MCP"] --> C
-    H["CORAX MCP"] --> C
+    G["DARF MCP tools"] --> C
+    H["CORAX MCP tools"] --> C
     I["skills + commands"] --> G
     I --> H
 ```
@@ -60,21 +60,21 @@ CORAX 是 Codex-native 对抗审查框架。典型流程：
 
 CORAX 的 MCP 代码已经迁入并通过语法编译，但还需要补更完整的测试。
 
-## 当前 benchmark profile
+## 当前 benchmark adapter
 
-当前 `src/quant_audit_benchmark/auditor.py` 中的三个 profile 是占位实现：
+当前 `src/quant_audit_benchmark/adapters/` 中有三个可运行 adapter：
 
 - `single_llm_baseline`
-- `darf_cross_model`
-- `corax_santa_sentinel`
+- `darf`
+- `corax`
 
-它们现在用 deterministic rules 模拟不同审查强度。后续应该把 profile 替换为真实 adapter：
+`single_llm_baseline` 是 deterministic baseline。`darf` 会调用 DARF MCP normalization scan。`corax` 会调用 CORAX lookahead scan、normalization scan 和 blind brief stripper。三者都输出统一的 `ReviewResult`：
 
 ```mermaid
 flowchart LR
     A["AuditCase"] --> B["ReviewerAdapter"]
-    B --> C["Raw model output"]
-    C --> D["JSON parser / schema validator"]
+    B --> C["Raw adapter output"]
+    C --> D["Normalized findings"]
     D --> E["ReviewResult"]
     E --> F["Metrics"]
 ```
@@ -92,19 +92,17 @@ flowchart LR
 
 ## 下一步接口建议
 
-建议新增：
+已经新增：
 
 ```text
 src/quant_audit_benchmark/
   adapters/
     base.py
-    single_llm.py
     darf.py
     corax.py
-  schemas/
-    review_result.schema.json
-  runners/
-    run_benchmark.py
+    deterministic.py
+    registry.py
+  runner.py
 ```
 
 核心接口可以是：
