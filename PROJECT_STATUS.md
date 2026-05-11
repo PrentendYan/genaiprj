@@ -7,7 +7,8 @@
 - 加了 6 个初始审查案例，覆盖前视偏差、归一化泄漏、随机时间序列切分、缺少交易成本、正常策略和 unsupported claim。
 - 放了一个小的 BTC 真实数据样例，避免项目完全依赖 synthetic data。
 - 写了基础测试，目前 `python -m unittest discover -s tests` 可以通过。
-- 梳理了本地 DARF / CORAX 的关键代码路径，见 `docs/local_darf_corax_map.md`。
+- 已经把 DARF / CORAX 的主要 MCP 代码、skill 文档、references 和 schemas 整理进项目。
+- 把个人路径改成了可配置模式，见 `integrations/darf_mcp/config.py` 和 `integrations/corax_mcp/config.py`。
 
 ## 当前目录里有什么
 
@@ -15,22 +16,36 @@
 - `benchmark_cases/cases.json`：案例和标签。
 - `data/btc_usd_coingecko_sample.csv`：BTC 数据样例。
 - `tests/test_auditor.py`：基础测试。
+- `integrations/darf_mcp/`：DARF MCP server 代码和测试。
+- `integrations/corax_mcp/`：CORAX MCP server 代码。
+- `commands/darf.md`、`commands/corax.md`：DARF / CORAX 的流程编排说明。
+- `skills/darf/`、`skills/corax/`：DARF / CORAX skill 文档、references 和 schemas。
 - `docs/architecture.md`：DARF / CORAX 架构说明。
-- `docs/local_darf_corax_map.md`：本地已有实现的位置索引。
+- `docs/local_darf_corax_map.md`：项目内实现的位置索引。
 - `reports/primary_report.md`、`site/index.html`：早期草稿，可以后面重写。
 
 ## 怎么运行
+
+基础 benchmark：
 
 ```bash
 python -m unittest discover -s tests
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
 ```
 
+完整 DARF MCP 测试：
+
+```bash
+python -m pip install -r requirements.txt
+cd integrations/darf_mcp
+python -m pytest tests
+```
+
 ## 还需要做
 
 ### Agent 逻辑
 
-- 把现在的 regex / deterministic profile 替换成真正的 agent 调用。
+- 把现在的 regex / deterministic profile 接到真正的 agent 调用。
 - 加一个统一接口，例如 `ReviewerAdapter.review(case) -> ReviewResult`。
 - 分别实现：
   - single LLM baseline
@@ -58,13 +73,6 @@ python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
 - 把 ground-truth label 从 case 里拆出去。
 - 至少保留一个 clean case、一个 ambiguous case、一个 agent failure case。
 
-## 可以怎么分工
-
-- 一个人做 agent adapter 和 schema。
-- 一个人扩 benchmark case 和 label。
-- 一个人补测试和验证流程。
-- 一个人整理 analysis notebook / report 叙事。
-
 ## 不要放进仓库
 
 - API key
@@ -72,4 +80,4 @@ python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
 - 本地 MCP logs
 - 本地 SQLite lesson DB
 - Claude / Codex 个人配置
-- `/tmp` 里的 debug logs
+- 调试日志

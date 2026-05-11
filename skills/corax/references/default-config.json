@@ -1,0 +1,129 @@
+{
+  "_comment": "CORAX default config. Used by `$corax` Step 0.5 as template, copied to corax-workspace/config.json and overridden per task.",
+  "corax_version": "0.1.0",
+  "task": null,
+  "mode": "interactive",
+  "created_at": null,
+  "models": {
+    "producer": "gpt-5.4",
+    "reviewer": "gpt-5.4",
+    "sentinel": "claude-opus-4-6"
+  },
+  "reasoning_effort": {
+    "producer": "xhigh",
+    "reviewer": "high"
+  },
+  "budgets": {
+    "codex_fix_cycles": 3,
+    "sentinel_soft_veto_cycles": 3,
+    "auto_hard_veto_cycles": 2,
+    "mutation_rounds_max": 3,
+    "phase_total_cap": 9,
+    "phase_timeout_s": 1800,
+    "review_timeout_s": 600,
+    "network_error_consecutive_limit": 5,
+    "l1_fix_rounds": 2,
+    "l2_fix_rounds": 2,
+    "l3_fix_rounds": 2,
+    "l4_critical_fix_rounds": 2
+  },
+  "cost_caps": {
+    "_comment": "USD hard caps. Skill checks before each actor call. Exceeding triggers escalate.",
+    "max_cost_usd_per_phase": 25.00,
+    "max_cost_usd_total_run": 100.00,
+    "warn_at_usd_per_phase": 15.00,
+    "warn_at_usd_total_run": 70.00
+  },
+  "codex_cli_compat": {
+    "_comment": "Compatibility matrix. Skill Step 0.5 checks `codex --version` against min_version. Below min -> refuse to start.",
+    "min_version": "0.117.0",
+    "tested_versions": ["0.117.0"],
+    "known_flag_support": {
+      "full-auto": true,
+      "dangerously-bypass-approvals-and-sandbox": true,
+      "ephemeral": true,
+      "skip-git-repo-check": true,
+      "output-schema": true,
+      "sandbox": ["read-only", "workspace-write", "danger-full-access"],
+      "add-dir": true,
+      "ask-for-approval_on_exec": false
+    }
+  },
+  "phases": {
+    "research": {
+      "enabled": true,
+      "review_level_default": "full"
+    },
+    "design": {
+      "enabled": true,
+      "review_level_default": "full"
+    },
+    "implement": {
+      "enabled": true,
+      "review_level_default": "full",
+      "plan_count": 3,
+      "allow_parallel_plans": true,
+      "merge_conflict_auto_mode": "escalate"
+    },
+    "validate": {
+      "enabled": true,
+      "review_level_default": "full"
+    },
+    "report": {
+      "enabled": true,
+      "review_level_default": "lite"
+    }
+  },
+  "sentinel": {
+    "groupthink_thresholds": {
+      "low": 0.3,
+      "medium": 0.6,
+      "high": 0.8
+    },
+    "darf_lessons_top_k": 5,
+    "agent_model": "claude-opus-4-6",
+    "agent_subagent_type": "general-purpose"
+  },
+  "anti_sycophancy": {
+    "force_confidence_downgrade_on_full_pass": true,
+    "require_counter_arguments_min": 1,
+    "require_alternative_approaches_min": 1,
+    "require_sentinel_missed_concerns_min": 1
+  },
+  "mutation_ladder": {
+    "round_axes_counts": [3, 5, 8],
+    "routing_yaml_path": "references/mutation-routing.yaml",
+    "axes_yaml_path": "references/mutation-axes.yaml",
+    "persona_library_path": "references/persona-library.yaml"
+  },
+  "network_error": {
+    "regex_patterns": [
+      "network",
+      "timeout",
+      "ECONN",
+      "DNS",
+      "unreachable",
+      "502",
+      "503",
+      "504"
+    ]
+  },
+  "shared_brain": {
+    "_comment": "Shared DB with DARF. File is named darf-lessons.db for historical reasons (DARF created it first), logically cross-framework. See skills/corax/references/architecture.md.",
+    "lessons_db_path": "${CORAX_LESSONS_DB_PATH:-.runtime/shared/darf-lessons.db}",
+    "lessons_flat_dir": "${CORAX_LESSONS_FLAT_DIR:-.runtime/corax/lessons-flat/}",
+    "migration_script": "${CORAX_MIGRATION_SCRIPT:-scripts/add-corax-columns.sql}",
+    "schema_required_columns": ["metadata", "source_framework"],
+    "refuse_start_if_schema_missing": true
+  },
+  "safety": {
+    "interactive_pre_approval_per_producer_call": true,
+    "auto_mode_post_verification_mandatory": true,
+    "disallowed_write_paths": [
+      "**/darf-workspace/**",
+      "**/mcp-servers/darf-mcp/**",
+      "**/skills/darf/**",
+      "${CORAX_LESSONS_DB_PATH:-.runtime/shared/darf-lessons.db}"
+    ]
+  }
+}

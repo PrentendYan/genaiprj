@@ -1,0 +1,65 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CORAX Codex Reviewer Verdict",
+  "description": "Santa Method reviewer output. Schema enforced by Codex --output-schema flag.",
+  "type": "object",
+  "required": ["verdict", "confidence", "checks", "counter_arguments", "alternative_approaches"],
+  "properties": {
+    "verdict": {
+      "type": "string",
+      "enum": ["PASS", "FAIL"]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH"]
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One entry per rubric criterion from phase-protocol.md",
+      "items": {
+        "type": "object",
+        "required": ["name", "status", "reasoning"],
+        "properties": {
+          "name": {"type": "string", "description": "Rubric criterion name"},
+          "status": {"type": "string", "enum": ["PASS", "FAIL", "WARNING"]},
+          "reasoning": {"type": "string", "minLength": 20, "description": "Must reference specific content from blind brief"}
+        }
+      }
+    },
+    "counter_arguments": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Adversarial angles even if verdict is PASS. Cannot be empty.",
+      "items": {"type": "string", "minLength": 20}
+    },
+    "alternative_approaches": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Alternative methods that could have been used. Cannot be empty.",
+      "items": {"type": "string", "minLength": 20}
+    },
+    "critical_issues": {
+      "type": "array",
+      "description": "Show-stopping problems. Presence of any item forces verdict FAIL.",
+      "items": {
+        "type": "object",
+        "required": ["severity", "issue", "evidence"],
+        "properties": {
+          "severity": {"type": "string", "enum": ["critical", "major"]},
+          "issue": {"type": "string"},
+          "evidence": {"type": "string", "description": "Specific reference to blind brief content"},
+          "category": {
+            "type": "string",
+            "enum": ["lookahead", "leakage", "methodology", "implementation", "statistical", "data_quality", "other"]
+          }
+        }
+      }
+    },
+    "reasoning_summary": {
+      "type": "string",
+      "minLength": 50,
+      "description": "1-paragraph overall reasoning for the verdict"
+    }
+  }
+}

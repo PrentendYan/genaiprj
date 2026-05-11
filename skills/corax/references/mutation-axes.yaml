@@ -1,0 +1,182 @@
+# CORAX Mutation Axes
+#
+# 8 axes that can be combined to mutate the Codex-Producer prompt when groupthink=HIGH.
+# Each axis has an ID, application type, and prompt fragment template.
+#
+# Application types:
+#   - replace: overwrites a section of the base prompt
+#   - append: appends to a section
+#   - config: changes codex CLI flag or config, not prompt text
+
+axes:
+
+  - id: 1
+    name: "Persona"
+    application: replace
+    target_section: "role"
+    description: "Switch the Producer's persona completely. Replaces the 'Role' section of the base prompt with a new persona from persona-library.yaml."
+    prompt_fragment_template: |
+      {persona_prompt_fragment_from_library}
+    selection_source: persona-library.yaml
+    notes: "Which persona to select depends on failure_category. See mutation-routing.yaml."
+
+  - id: 2
+    name: "Context Composition"
+    application: append
+    target_section: "context"
+    description: "Inject additional reference materials not present in base context. Pulls from lesson DB and/or alternative reference sets."
+    prompt_fragment_template: |
+      ## Additional Context (Mutation Round Injection)
+
+      The base context has been augmented with the following materials, which may
+      provide angles the initial attempt overlooked:
+
+      ### Related historical lessons (from lesson DB cross-framework query)
+      {lesson_db_top_10}
+
+      ### Alternative reference framings
+      {alt_reference_summaries}
+
+      Consider these materials when planning your approach.
+    notes: "Tool should call search_lessons with larger top_k (10 instead of 5) for this axis."
+
+  - id: 3
+    name: "Constraint Injection"
+    application: append
+    target_section: "constraints"
+    description: "Add hard prohibition list to prevent repeating the same coding patterns or shortcuts."
+    prompt_fragment_template: |
+      ## Mutation Round Hard Constraints
+
+      Because the previous round exhibited groupthink, the following patterns are now HARD PROHIBITED
+      in this round. Violating any of these will trigger immediate rejection:
+
+      {constraint_list}
+
+      Specifically avoid:
+      - Using the same pandas idioms as in the previous attempt
+      - Reusing the same variable naming patterns
+      - Following the same function signature structure
+      - Taking the same shortcut you did before
+    notes: "constraint_list is populated from lesson DB + previous round's output analysis."
+
+  - id: 4
+    name: "Adversarial Framing"
+    application: replace
+    target_section: "opening"
+    description: "Replace the prompt opening with an adversarial frame. Forces the model to approach from a suspicion-first stance."
+    prompt_fragment_template: |
+      # WARNING: Previous attempts were flagged for groupthink (HIGH risk)
+
+      Before you start: the previous Producer+Reviewer pair on this exact task produced
+      outputs that looked independently reasoned but were actually echoing each other.
+      This means there is a non-obvious trap in this task that they both fell into.
+
+      Your job in this round is to:
+      1. Identify what that trap most likely is (list 3 candidates)
+      2. Design your approach explicitly to avoid each candidate
+      3. Do the work, and in your output explain which trap you avoided and how
+
+      Assume the "obvious path" is the trap. Find the path a paranoid expert would take.
+    notes: "This is the most aggressive axis. Use with caution - may over-steer the model."
+
+  - id: 5
+    name: "Diversity Requirement"
+    application: append
+    target_section: "output_requirements"
+    description: "Force explicit enumeration of alternative approaches before committing to one."
+    prompt_fragment_template: |
+      ## Diversity Requirement (Mutation Round)
+
+      Before doing the main work, explicitly produce:
+
+      1. **Three distinct alternative approaches** to this task. For each:
+         - Name
+         - Key intuition
+         - Primary failure mode
+         - Cost/complexity tradeoff
+
+      2. **Explicit selection rationale**: which approach you choose and why it is
+         better than the other 2 *for this specific task*.
+
+      3. **Acknowledgment**: what you are giving up by rejecting the other 2.
+
+      Only after this section should you proceed with the actual work. Do not skip
+      the enumeration - it is mandatory for this round.
+    notes: "Forces explicit exploration of the solution space."
+
+  - id: 6
+    name: "Failure Scenario Priming"
+    application: append
+    target_section: "constraints"
+    description: "Inject top-N most relevant historical failure cases from lesson DB as 'must check' items."
+    prompt_fragment_template: |
+      ## Must-Check Items (from historical lesson DB)
+
+      Based on similar past tasks, the following failure modes have occurred before.
+      You MUST explicitly verify your work does not repeat any of them:
+
+      {top_5_lessons_formatted}
+
+      For each item above, in your final output state whether you verified it and how.
+      Do not skip any - saying "not applicable" is fine but requires a one-line explanation why.
+    notes: "This is the primary axis for leveraging lesson DB knowledge."
+
+  - id: 7
+    name: "Temperature / Sampling"
+    application: config
+    target_section: "codex_flags"
+    description: "Change generation sampling parameters to increase output diversity."
+    config_changes:
+      reasoning_effort: "high_plus_sampling"
+      generate_n_candidates: 3
+      self_select_best: true
+    prompt_fragment_template: |
+      ## Multi-Candidate Mode (Mutation Round)
+
+      For this round, you will generate THREE independent candidate solutions before settling
+      on one. For each candidate:
+      1. Write a one-paragraph plan
+      2. Note the key assumption that differs from other candidates
+      3. Score yourself on (originality / likely-correctness / implementation-difficulty)
+
+      Then pick the one with the best originality-to-risk ratio. Implement only that one.
+    notes: "This axis changes both prompt and codex flags (when supported). Effectively forces exploration of the solution space via explicit enumeration."
+
+  - id: 8
+    name: "Reference Anchoring"
+    application: append
+    target_section: "output_requirements"
+    description: "Require explicit citation of at least 2 references (papers, lessons, or proven implementations) for methodology choices."
+    prompt_fragment_template: |
+      ## Reference Anchoring Requirement (Mutation Round)
+
+      Every major methodology choice in your output must cite at least 2 specific references:
+      - Academic papers (with author + year + venue)
+      - Proven open-source implementations (with repo + version)
+      - CORAX or DARF lesson DB entries (with lesson ID)
+
+      Format each citation inline and list all references in a "## References" section at the end.
+
+      You may NOT claim a choice is "standard" or "common practice" without citing specific
+      sources. If you cannot find 2 references for a choice, consider whether the choice is
+      actually well-founded or just habitual.
+    notes: "This axis forces explicit justification and reduces 'because it feels right' reasoning."
+
+# Global notes:
+#
+# 1. Axis application order matters when combining:
+#    - Axis 4 (Adversarial Framing) should be applied FIRST (replaces opening)
+#    - Axis 1 (Persona) should be applied SECOND (replaces role)
+#    - Append-type axes (2, 3, 5, 6, 8) can be in any order
+#    - Axis 7 (Config) is orthogonal, applied at CLI level
+#
+# 2. When multiple append-type axes target the same section, concatenate with "---" separators.
+#
+# 3. If Axis 7 (sampling) is not supported by the current codex CLI version, fall back to
+#    the prompt-only multi-candidate instruction and log a warning.
+#
+# 4. Adding a new axis:
+#    - Append entry here with id > 8
+#    - Update mutation-routing.yaml to include it in relevant categories
+#    - Update round_axes_counts in default-config.json if extending beyond round 3

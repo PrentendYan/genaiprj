@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CORAX Phase Output Metadata",
+  "description": "Metadata for phase-output.md files. Used by strip_brief and cross-phase consistency checks.",
+  "type": "object",
+  "required": ["phase", "created_at", "producer_id"],
+  "properties": {
+    "phase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "phase_name": {
+      "type": "string",
+      "enum": ["research", "design", "implement", "validate", "report"]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "producer_id": {
+      "type": "string",
+      "description": "Unique identifier for the producer invocation, e.g. phase-3-plan-a-round-1"
+    },
+    "fix_round": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "mutation_round": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0
+    },
+    "persona_used": {
+      "type": "string",
+      "description": "Key from persona-library.yaml"
+    },
+    "mutation_axes_applied": {
+      "type": "array",
+      "items": {"type": "integer", "minimum": 1, "maximum": 8}
+    },
+    "section_headings": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "H2 section headings in order, used by strip_brief to know what structure to preserve"
+    },
+    "contains_code_blocks": {"type": "boolean"},
+    "contains_tables": {"type": "boolean"},
+    "raw_word_count": {"type": "integer"},
+    "stripped_word_count": {
+      "type": "integer",
+      "description": "Word count after strip_brief. Used to detect over-stripping."
+    },
+    "prev_phase_reference": {
+      "type": "object",
+      "description": "Reference to previous phase's producer_id for cross-phase consistency check",
+      "properties": {
+        "producer_id": {"type": "string"},
+        "phase": {"type": "integer"}
+      }
+    }
+  }
+}

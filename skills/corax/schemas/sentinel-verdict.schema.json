@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CORAX Claude Opus Sentinel Verdict",
+  "description": "Sentinel V2 Meta Reviewer output. Returned by Agent(general-purpose, opus) call from skill orchestration.",
+  "type": "object",
+  "required": ["groupthink_risk", "missed_concerns", "verdict_override", "reasoning"],
+  "properties": {
+    "groupthink_risk": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH"],
+      "description": "Sentinel's assessment of how much Producer and Reviewer exhibit homogeneous reasoning."
+    },
+    "missed_concerns": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Items Codex double-review may have missed. Cannot be empty - if truly nothing found, include a minor concern noting suspicious full consensus.",
+      "items": {
+        "type": "object",
+        "required": ["severity", "category", "issue"],
+        "properties": {
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "major", "minor"]
+          },
+          "category": {
+            "type": "string",
+            "enum": ["methodology", "implementation", "data", "statistical", "groupthink_signal", "cross_phase_inconsistency"]
+          },
+          "issue": {"type": "string", "minLength": 20},
+          "evidence": {"type": "string", "description": "Where in the materials this concern surfaces"}
+        }
+      }
+    },
+    "verdict_override": {
+      "type": "string",
+      "enum": ["NONE", "SOFT_VETO", "HARD_VETO"],
+      "description": "NONE = let Codex verdict stand. SOFT_VETO = critical concerns require fix cycle but not catastrophic. HARD_VETO = methodology-level failure Codex missed, requires escalate (interactive) or self-solve (auto)."
+    },
+    "reasoning": {
+      "type": "string",
+      "minLength": 50,
+      "description": "Detailed reasoning for groupthink_risk and verdict_override. Must be substantive, not just 'looks fine'."
+    },
+    "groupthink_signals": {
+      "type": "array",
+      "description": "Specific evidence of Producer/Reviewer homogeneity",
+      "items": {
+        "type": "object",
+        "properties": {
+          "signal_type": {
+            "type": "string",
+            "enum": ["wording_similarity", "mutual_endorsement", "shared_blind_spot", "reasoning_echo", "confidence_inflation"]
+          },
+          "description": {"type": "string"},
+          "severity_contribution": {"type": "string", "enum": ["low", "medium", "high"]}
+        }
+      }
+    },
+    "darf_lesson_references": {
+      "type": "array",
+      "description": "DARF lessons from lesson DB that informed this review",
+      "items": {
+        "type": "object",
+        "properties": {
+          "lesson_id": {"type": "integer"},
+          "relevance": {"type": "string"},
+          "applied_to_concern": {"type": "string", "description": "Which missed_concern this lesson supports"}
+        }
+      }
+    },
+    "cross_phase_consistency_check": {
+      "type": "object",
+      "properties": {
+        "consistent_with_previous": {"type": "boolean"},
+        "inconsistencies_found": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

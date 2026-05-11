@@ -1,0 +1,102 @@
+# CORAX Mutation Routing
+#
+# Maps failure_category -> which axes to apply in which round.
+# Round escalation: Round 1 uses `primary` (3 axes), Round 2 adds `secondary` (up to 5 total),
+# Round 3 uses all 8 axes regardless of category.
+
+routing:
+
+  implementation_similarity:
+    description: "Producer and Reviewer used highly similar coding patterns, suggesting shared implementation pattern blind spots."
+    primary: [1, 3, 4]  # Persona + Constraint + Adversarial Framing
+    secondary: [5, 7]   # Diversity + Sampling
+    rationale: "Break the shared coding pattern by switching persona, adding hard prohibitions, and forcing adversarial framing."
+    persona_selection:
+      round_1: implementation_detail_hunter
+      round_2: red_team_auditor
+      round_3: paranoid_risk_officer
+
+  methodology_convergence:
+    description: "Design/evaluation methodology is homogenized between Producer and Reviewer — deeper groupthink at the conceptual level."
+    primary: [1, 5, 8]  # Persona + Diversity + Reference Anchoring
+    secondary: [2, 6]   # Context + Failure Priming
+    rationale: "Force explicit alternative methodologies and require anchoring to external references."
+    persona_selection:
+      round_1: skeptical_peer_reviewer
+      round_2: adversarial_data_scientist
+      round_3: devils_advocate
+
+  blind_spot_pattern:
+    description: "Codex family's known methodological blind spots triggered (lookahead, leakage, survivorship, etc.)."
+    primary: [3, 6, 2]  # Constraint + Failure Priming + Context
+    secondary: [1, 4]   # Persona + Framing
+    rationale: "Inject hard prohibitions based on known blind spots, prime with historical failure cases, and augment context with lesson DB top hits."
+    persona_selection:
+      round_1: conservative_statistician
+      round_2: adversarial_data_scientist
+      round_3: paranoid_risk_officer
+
+  reasoning_echo:
+    description: "Reviewer's reasoning essentially repeats Producer's reasoning (Reviewer echoes instead of verifying independently)."
+    primary: [4, 5, 7]  # Adversarial Framing + Diversity + Sampling
+    secondary: [1, 8]   # Persona + Reference Anchoring
+    rationale: "Force the Producer to explicitly enumerate alternatives and sample multiple candidates, making Reviewer's echo detectable."
+    persona_selection:
+      round_1: devils_advocate
+      round_2: red_team_auditor
+      round_3: skeptical_peer_reviewer
+
+# Fallback category (when failure_category cannot be inferred from Sentinel verdict)
+default:
+  description: "Unknown failure category; use general-purpose mutation."
+  primary: [1, 3, 4]
+  secondary: [5, 6]
+  rationale: "Generic groupthink response: change persona, add constraints, adversarial framing."
+  persona_selection:
+    round_1: red_team_auditor
+    round_2: devils_advocate
+    round_3: paranoid_risk_officer
+
+# Round escalation logic (explicit for clarity):
+#
+# Round 1: use `primary` 3 axes
+# Round 2: use `primary` + `secondary` (typically 5 axes, may overlap)
+# Round 3: use ALL 8 axes regardless of category
+# Round 4+: not allowed, forces escalate (handled by skill)
+
+round_escalation:
+  round_1:
+    axes_source: primary
+    max_count: 3
+    persona_index: round_1
+  round_2:
+    axes_source: primary_plus_secondary
+    max_count: 5
+    persona_index: round_2
+    dedup: true
+  round_3:
+    axes_source: all
+    max_count: 8
+    persona_index: round_3
+
+# Notes:
+#
+# 1. persona_selection fields are keys into persona-library.yaml. The mutation_select tool
+#    uses these to pick the right persona for Axis 1 based on round and category.
+#
+# 2. If a category's primary + secondary combined has fewer than round's max_count axes,
+#    the tool fills in missing slots from the remaining unused axes in deterministic order
+#    (ascending axis id).
+#
+# 3. If `history` shows a specific (round, axes) combination was already tried in a previous
+#    mutation attempt for the same phase, the tool should swap one axis for another to avoid
+#    exact repetition. The trace is recorded in mutation-trace.md.
+#
+# 4. For Round 3 (all 8 axes), there's no persona variation — whatever persona_selection.round_3
+#    says is used. If Round 3 still produces groupthink HIGH, escalate with the message
+#    "systematic convergence detected, consider switching to DARF framework".
+#
+# 5. Adding a new failure category:
+#    a. Add entry under `routing:` with primary/secondary/rationale/persona_selection
+#    b. Update mutation-ladder-protocol.md to add detection keywords for the new category
+#    c. No code change to corax_mutation_select tool

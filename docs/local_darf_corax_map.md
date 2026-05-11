@@ -1,48 +1,51 @@
-# 本地 DARF / CORAX 内容索引
+# DARF / CORAX 内容索引
 
-这个文件只列出本地已有实现的位置和作用，不建议把这些目录整包复制进项目里。
+这个文件列出当前项目里已经整理进来的 DARF / CORAX 实现位置。
 
 ## DARF
 
-本地 skill：
+项目内 skill：
 
-- `/Users/yandong/.codex/skills/darf-challenger/SKILL.md`
-- `/Users/yandong/.claude/skills/darf/SKILL.md`
+- `skills/darf/SKILL.md`
+- `skills/darf/references/`
+- `commands/darf.md`
 
-本地 MCP server：
+项目内 MCP server：
 
-- `/Users/yandong/.claude/mcp-servers/darf-mcp/server.py`
-- `/Users/yandong/.claude/mcp-servers/darf-mcp/challenger/`
-- `/Users/yandong/.claude/mcp-servers/darf-mcp/data/`
-- `/Users/yandong/.claude/mcp-servers/darf-mcp/jobs/`
-- `/Users/yandong/.claude/mcp-servers/darf-mcp/lessons/`
-- `/Users/yandong/.claude/mcp-servers/darf-mcp/verify/`
+- `integrations/darf_mcp/server.py`
+- `integrations/darf_mcp/challenger/`
+- `integrations/darf_mcp/data/`
+- `integrations/darf_mcp/jobs/`
+- `integrations/darf_mcp/lessons/`
+- `integrations/darf_mcp/verify/`
+- `integrations/darf_mcp/config.py`
 
 已经确认的行为：
 
 - `review_blind_brief` builds a blind-review prompt and calls Codex as challenger.
 - `CodexBackend` uses `codex exec`, `--ephemeral`, `--sandbox read-only`, a temporary cwd, retry logic, JSON extraction, and metrics.
 - `ClaudeAgentBackend` is a fallback path that writes a prompt file for independent Claude review.
-- 在 DARF MCP server 目录下运行测试时，本地测试结果是 `103 passed`。
+- DARF 运行时路径已改为环境变量配置，默认写入项目内 `.runtime/darf/`。
 
 ## CORAX
 
-本地 skill：
+项目内 skill：
 
-- `/Users/yandong/.codex/skills/corax/SKILL.md`
-- `/Users/yandong/.codex/skills/corax/references/architecture.md`
-- `/Users/yandong/.codex/skills/corax/references/gate-protocol.md`
-- `/Users/yandong/.codex/skills/corax/references/sentinel-protocol.md`
+- `skills/corax/SKILL.md`
+- `skills/corax/references/`
+- `skills/corax/schemas/`
+- `commands/corax.md`
 
-本地 MCP server：
+项目内 MCP server：
 
-- `/Users/yandong/.claude/mcp-servers/corax-mcp/server.py`
-- `/Users/yandong/.claude/mcp-servers/corax-mcp/producer/codex_exec.py`
-- `/Users/yandong/.claude/mcp-servers/corax-mcp/reviewer/codex_santa.py`
-- `/Users/yandong/.claude/mcp-servers/corax-mcp/workspace/brief_stripper.py`
-- `/Users/yandong/.claude/mcp-servers/corax-mcp/data/`
-- `/Users/yandong/.claude/mcp-servers/corax-mcp/verify/`
-- `/Users/yandong/.claude/mcp-servers/corax-mcp/mutation/`
+- `integrations/corax_mcp/server.py`
+- `integrations/corax_mcp/producer/codex_exec.py`
+- `integrations/corax_mcp/reviewer/codex_santa.py`
+- `integrations/corax_mcp/workspace/brief_stripper.py`
+- `integrations/corax_mcp/data/`
+- `integrations/corax_mcp/verify/`
+- `integrations/corax_mcp/mutation/`
+- `integrations/corax_mcp/config.py`
 
 已经确认的行为：
 
@@ -50,10 +53,11 @@
 - Reviewer uses a Santa Method setup with `codex exec --ephemeral --sandbox read-only` and a temporary cwd.
 - `brief_stripper.py` removes conclusion-like paragraphs to create a blind brief.
 - Sentinel is documented as a meta-reviewer for groupthink and same-model blind spots.
+- CORAX 运行时路径已改为环境变量配置，默认写入项目内 `.runtime/corax/` 和 `.runtime/shared/`。
 
 ## 还需要确认或补齐
 
 - CORAX 文档和 producer 实现需要再对齐，之后才能作为最终架构依据。
 - CORAX producer / reviewer subprocess wrapper 还需要更直接的测试。
-- 项目里最好用 adapter 和 schema 抽象，不要硬编码本地 MCP 假设。
-- shared lesson DB 和本地配置文件不要放进项目，除非先做过明确清理。
+- 项目里最好继续补 adapter 和 schema 抽象，把 benchmark scaffold 与 MCP 工具真正接起来。
+- shared lesson DB 和本地配置文件不要提交，运行时只写 `.runtime/`。

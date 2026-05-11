@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CORAX Producer Summary",
+  "description": "Structured summary output by Codex-Producer. Written to -o file, parsed by skill for gate and subsequent steps.",
+  "type": "object",
+  "required": ["phase", "producer_id", "task_summary", "deliverables", "metrics", "assumptions", "limitations"],
+  "properties": {
+    "phase": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Phase number (1-5)"
+    },
+    "phase_name": {
+      "type": "string",
+      "enum": ["research", "design", "implement", "validate", "report"]
+    },
+    "producer_id": {
+      "type": "string",
+      "description": "Identifier for this producer invocation, e.g. phase-3-plan-a-round-1"
+    },
+    "task_summary": {
+      "type": "string",
+      "minLength": 50,
+      "description": "2-3 sentence restatement of what this phase was tasked to do"
+    },
+    "deliverables": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "type", "description"],
+        "properties": {
+          "path": {"type": "string"},
+          "type": {
+            "type": "string",
+            "enum": ["python_module", "python_test", "yaml_config", "json_config", "markdown_doc", "notebook", "data_file", "other"]
+          },
+          "description": {"type": "string"},
+          "critical": {"type": "boolean", "default": true}
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Raw metrics produced by this phase. Structure depends on phase.",
+      "additionalProperties": true
+    },
+    "data_sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "as_of_date"],
+        "properties": {
+          "name": {"type": "string"},
+          "as_of_date": {"type": "string", "format": "date"},
+          "row_count": {"type": "integer"},
+          "field_count": {"type": "integer"}
+        }
+      }
+    },
+    "methodology_notes": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "Key methodology decisions, one per item. Used by Sentinel for cross-phase consistency check."
+    },
+    "assumptions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string"},
+      "description": "Explicit assumptions made. Must list at least 1."
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string"},
+      "description": "Honest limitations. Must list at least 1. No-limitations is suspicious."
+    },
+    "fix_round": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "0 for first attempt, N for Nth fix cycle"
+    },
+    "mutation_round": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "0 for non-mutation, N for Nth mutation ladder round"
+    },
+    "self_reported_confidence": {
+      "type": "string",
+      "enum": ["LOW", "MEDIUM", "HIGH"],
+      "description": "Producer's self-assessed confidence in this output. Subject to 'full pass suspect' downgrade."
+    }
+  }
+}
