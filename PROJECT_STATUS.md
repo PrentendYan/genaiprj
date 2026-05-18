@@ -39,7 +39,7 @@ python -m pytest tests
 
 已验证结果：
 
-- benchmark tests：8 passed。
+- benchmark tests：9 passed。
 - DARF adapter CLI：可运行。
 - CORAX adapter CLI：可运行。
 - CORAX live adapter：已用 `gpt-5.4-mini` 跑通 `btc_future_return_feature`，能返回 structured verdict 并保存 run artifact。

@@ -101,7 +101,7 @@ python -m pytest tests
 
 当前已验证结果：
 
-- `python -m unittest discover -s tests`：4 passed。
+- `python -m unittest discover -s tests`：9 passed。
 - `python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter darf`：可运行。
 - `python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax`：可运行。
 - `cd integrations/darf_mcp && python -m pytest tests`：103 passed。
