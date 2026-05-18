@@ -74,6 +74,14 @@ python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --ada
 
 CLI 会输出每个 case 的审查结果、raw adapter output，以及 precision / recall / F1。默认不传 `--adapter` 时会依次运行 `single_llm_baseline`、`darf`、`corax`。
 
+后续如果运行 live DARF / CORAX agent wrapper，需要先让 shell 找到正确的 Codex CLI：
+
+```bash
+export PATH="/Applications/Codex.app/Contents/Resources:$PATH"
+```
+
+当前机器上的 npm global `codex` 入口不完整。完整说明见 `CONFIGURATION.md` 的“本机 Codex / Claude CLI”。
+
 ## 运行 DARF MCP 测试
 
 完整 DARF / CORAX 逻辑需要额外依赖，建议 Python 3.13。先安装依赖：

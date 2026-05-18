@@ -41,6 +41,23 @@ python -m unittest discover -s tests
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
 ```
 
+## 本机 Codex / Claude CLI
+
+基础 benchmark 和离线 adapter 不需要 Codex / Claude CLI。只有后续运行 live DARF challenger、live CORAX reviewer、Claude Sentinel 这类 agent 调用时，才需要本机 CLI。
+
+当前本机验证过的可用方式：
+
+```bash
+export PATH="/Applications/Codex.app/Contents/Resources:$PATH"
+codex exec --ephemeral --sandbox read-only -m gpt-5.4-mini "Return exactly: CODEX_SMOKE_OK"
+claude auth status
+claude -p "Return exactly: CLAUDE_SMOKE_OK" --output-format text --no-session-persistence --tools "" --max-budget-usd 0.20
+```
+
+`/Users/yandong/.npm-global/bin/codex` 这个 npm global 入口在当前机器上不完整，缺少 native Codex binary。运行项目里的 live Codex wrapper 时，应优先使用 Codex Desktop bundled CLI：`/Applications/Codex.app/Contents/Resources/codex`。最简单做法是把 `/Applications/Codex.app/Contents/Resources` 放到 `PATH` 最前面。
+
+Claude CLI 在 sandbox 里可能看不到本机登录态。确认 Claude 是否可用时，以本机环境中的 `claude auth status` 为准；当前已验证 `authMethod` 为 `claude.ai` 时，`claude -p` 可以正常返回模型输出。
+
 ## DARF MCP 测试
 
 ```bash
@@ -51,4 +68,4 @@ python -m pytest tests
 
 ## 注意
 
-运行完整 agent 逻辑建议使用 Python 3.13，并需要本机配置可用的 `codex` CLI 和对应模型/API 权限。项目不会提交 API key、个人 `.env`、本地日志或 SQLite runtime DB。
+运行完整 agent 逻辑建议使用 Python 3.13，并需要本机配置可用的 Codex Desktop bundled CLI、Claude CLI 和对应模型/API 权限。项目不会提交 API key、个人 `.env`、本地日志或 SQLite runtime DB。
