@@ -10,6 +10,9 @@
 - 接入了可运行的 reviewer adapter：`single_llm_baseline`、`darf`、`corax`。
 - `darf` adapter 会调用 `integrations/darf_mcp` 的 normalization MCP scan。
 - `corax` adapter 会调用 `integrations/corax_mcp` 的 lookahead scan、normalization scan 和 blind brief stripper。
+- 接入了 `corax-live` adapter，可以真实调用本机 Codex CLI 做 live reviewer。
+- live adapter 支持通过 `--model` 或 `QUANT_AUDIT_LIVE_MODEL` 切换模型。
+- live adapter 支持通过 `--limit` 或 `--case-id` 控制调用次数和成本。
 - 添加了 6 个初始审查案例。
 - 添加了一个 BTC 真实数据样例。
 - 添加了基础测试。
@@ -23,6 +26,7 @@ python -m unittest discover -s tests
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter darf
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax
+python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-live --model gpt-5.4-mini --case-id btc_future_return_feature
 ```
 
 完整 DARF MCP 测试：
@@ -38,6 +42,7 @@ python -m pytest tests
 - benchmark tests：8 passed。
 - DARF adapter CLI：可运行。
 - CORAX adapter CLI：可运行。
+- CORAX live adapter：已用 `gpt-5.4-mini` 跑通 `btc_future_return_feature`，能返回 structured verdict 并保存 run artifact。
 - DARF MCP tests：103 passed。
 
 ## 当前包含哪些逻辑
@@ -74,7 +79,8 @@ python -m pytest tests
 - DARF / CORAX 已经以 offline adapter 形式接入 benchmark。
 - CORAX MCP 还没有像 DARF 那样完整的测试套件。
 - Claude Sentinel 还没有 Python adapter，主要是文档和 command orchestration。
-- DARF live challenger 和 CORAX live reviewer 还没有接到 benchmark CLI。
+- DARF live challenger 还没有接到 benchmark CLI。
+- CORAX live reviewer 已经接到 benchmark CLI，但还需要更多真实 case 和失败模式测试。
 - lessons DB migration 还需要整理成项目内脚本。
 - benchmark labels 还没有和 case 分离。
 - case 数量还少，需要更多真实 notebook / script。
@@ -85,7 +91,7 @@ python -m pytest tests
 ### Agent 接入
 
 - 把 `DarfOfflineAdapter` 升级为 live `DarfBlindReviewAdapter`。
-- 把 `CoraxOfflineAdapter` 升级为 live `CoraxReviewerSentinelAdapter`。
+- 继续完善 `CoraxLiveAdapter`，加入 schema validation、cost estimate 和更多失败模式测试。
 - 给 adapter 增加 latency、cost、raw JSON 保存。
 - 增加 adapter failure handling：timeout、malformed JSON、schema mismatch。
 

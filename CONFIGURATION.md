@@ -52,9 +52,12 @@ export PATH="/Applications/Codex.app/Contents/Resources:$PATH"
 codex exec --ephemeral --sandbox read-only -m gpt-5.4-mini "Return exactly: CODEX_SMOKE_OK"
 claude auth status
 claude -p "Return exactly: CLAUDE_SMOKE_OK" --output-format text --no-session-persistence --tools "" --max-budget-usd 0.20
+python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-live --model gpt-5.4-mini --limit 1
 ```
 
 `/Users/yandong/.npm-global/bin/codex` 这个 npm global 入口在当前机器上不完整，缺少 native Codex binary。运行项目里的 live Codex wrapper 时，应优先使用 Codex Desktop bundled CLI：`/Applications/Codex.app/Contents/Resources/codex`。最简单做法是把 `/Applications/Codex.app/Contents/Resources` 放到 `PATH` 最前面。
+
+Live adapter 的模型不要写死。临时测试可以传 `--model gpt-5.4-mini`，最终评估可以传更强模型；也可以用 `QUANT_AUDIT_LIVE_MODEL` 设置默认模型。用 `--limit` 或 `--case-id` 可以控制调用次数和成本。
 
 Claude CLI 在 sandbox 里可能看不到本机登录态。确认 Claude 是否可用时，以本机环境中的 `claude auth status` 为准；当前已验证 `authMethod` 为 `claude.ai` 时，`claude -p` 可以正常返回模型输出。
 

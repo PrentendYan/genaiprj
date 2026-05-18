@@ -9,10 +9,15 @@ from .adapters import build_adapter
 from .auditor import AuditCase, _safe_div
 
 
-def evaluate_adapter(cases: Iterable[AuditCase], adapter_name: str) -> dict[str, object]:
+def evaluate_adapter(
+    cases: Iterable[AuditCase],
+    adapter_name: str,
+    model: str | None = None,
+    run_dir: str | None = None,
+) -> dict[str, object]:
     """Evaluate a runnable adapter against labeled benchmark cases."""
 
-    adapter = build_adapter(adapter_name)
+    adapter = build_adapter(adapter_name, model=model, run_dir=run_dir)
     true_positive = false_positive = false_negative = 0
     per_case: list[dict[str, object]] = []
 
@@ -41,6 +46,8 @@ def evaluate_adapter(cases: Iterable[AuditCase], adapter_name: str) -> dict[str,
 
     return {
         "adapter": adapter_name,
+        "model": model,
+        "run_dir": run_dir,
         "precision": round(precision, 4),
         "recall": round(recall, 4),
         "f1": round(f1, 4),

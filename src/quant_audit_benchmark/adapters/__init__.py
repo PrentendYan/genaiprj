@@ -2,6 +2,14 @@
 """Reviewer adapters for the quant audit benchmark."""
 
 from .base import ReviewResult, ReviewerAdapter
-from .registry import ADAPTER_NAMES, build_adapter
+from .corax_live import CoraxLiveAdapter
+from .registry import ADAPTER_NAMES, DEFAULT_ADAPTER_NAMES, build_adapter
 
-__all__ = ["ADAPTER_NAMES", "ReviewResult", "ReviewerAdapter", "build_adapter"]
+__all__ = [
+    "ADAPTER_NAMES",
+    "CoraxLiveAdapter",
+    "DEFAULT_ADAPTER_NAMES",
+    "ReviewResult",
+    "ReviewerAdapter",
+    "build_adapter",
+]
