@@ -7,6 +7,8 @@ import argparse
 import json
 from pathlib import Path
 
+from integrations.corax_mcp.sentinel import run_sentinel_summary
+
 from .adapters import ADAPTER_NAMES, DEFAULT_ADAPTER_NAMES
 from .auditor import PROFILE_THRESHOLDS, evaluate, load_cases
 from .runner import evaluate_adapter
@@ -43,6 +45,15 @@ def main() -> int:
         type=int,
         help="Run only the first N loaded cases. Useful for low-cost live smoke tests.",
     )
+    parser.add_argument(
+        "--sentinel-summary",
+        action="store_true",
+        help="Run one optional Claude Sentinel meta-review over the final evaluation summary.",
+    )
+    parser.add_argument(
+        "--sentinel-model",
+        help="Optional Claude model for --sentinel-summary. Defaults to QUANT_AUDIT_SENTINEL_MODEL or Claude CLI default.",
+    )
     args = parser.parse_args()
 
     case_path = Path(args.cases)
@@ -73,8 +84,27 @@ def main() -> int:
             for adapter in adapters
         ]
 
-    print(json.dumps(results, indent=2, ensure_ascii=False))
+    output: object = results
+    if args.sentinel_summary:
+        sentinel_run_dir = args.run_dir or _single_result_run_dir(results)
+        output = {
+            "evaluations": results,
+            "sentinel_summary": run_sentinel_summary(
+                results,
+                run_dir=sentinel_run_dir,
+                model=args.sentinel_model,
+            ),
+        }
+
+    print(json.dumps(output, indent=2, ensure_ascii=False))
     return 0
+
+
+def _single_result_run_dir(results: list[dict[str, object]]) -> str | None:
+    if len(results) != 1:
+        return None
+    run_dir = results[0].get("run_dir")
+    return run_dir if isinstance(run_dir, str) else None
 
 
 if __name__ == "__main__":
