@@ -58,6 +58,17 @@ def _run_reviewer_sync(
             "error": "codex spawn failed: codex CLI not found",
         }
 
+    codex_cmd = _codex_command()
+    if codex_cmd is None:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return {
+            "verdict_json": None,
+            "raw_output": "",
+            "latency_ms": 0,
+            "network_error": False,
+            "error": "codex spawn failed: codex CLI not found",
+        }
+
     cmd = [
         codex_cmd,
         "exec",
