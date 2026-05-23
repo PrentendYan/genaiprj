@@ -52,25 +52,45 @@ class CoraxLiveAdapter:
     def review(self, case: AuditCase) -> ReviewResult:
         prompt = _build_prompt(case)
         started = time.monotonic()
-        with _codex_cli_path():
-            result = asyncio.run(
-                self._reviewer(prompt=prompt, model=self.model, timeout=self.timeout)
-            )
+        try:
+            with _codex_cli_path():
+                result = asyncio.run(
+                    self._reviewer(prompt=prompt, model=self.model, timeout=self.timeout)
+                )
+            if not isinstance(result, dict):
+                result = {"error": f"reviewer returned non-dict result: {type(result).__name__}"}
+        except Exception as exc:  # noqa: BLE001 - live adapter must not crash benchmark
+            result = {
+                "verdict_json": None,
+                "raw_output": "",
+                "latency_ms": None,
+                "network_error": False,
+                "error": f"{type(exc).__name__}: {exc}",
+            }
         latency_ms = int((time.monotonic() - started) * 1000)
 
         verdict_json = _coerce_mapping(result.get("verdict_json"))
-        findings = tuple(_findings_from_verdict(verdict_json))
+        error = _error_from_result(result, verdict_json)
+        findings = tuple(_findings_from_verdict(verdict_json)) if error is None else ()
+        artifact_path = self._artifact_path(case.case_id)
         raw_output = {
             "mode": "live_corax_codex_reviewer",
+            "adapter_name": self.name,
             "case_id": case.case_id,
             "model": self.model,
             "latency_ms": latency_ms,
+            "cost_usd": result.get("cost_usd"),
+            "error": error,
             "reviewer_result": result,
             "verdict_json": verdict_json,
-            "artifact_path": str(self._artifact_path(case.case_id)),
+            "artifact_path": str(artifact_path),
         }
-        _write_artifact(self._artifact_path(case.case_id), raw_output)
+        _write_artifact(artifact_path, raw_output)
         return ReviewResult(reviewer=self.name, findings=findings, raw_output=raw_output)
+
+    @property
+    def run_dir(self) -> Path:
+        return self._run_dir
 
     def _artifact_path(self, case_id: str) -> Path:
         return self._run_dir / self.name / f"{case_id}.json"
@@ -86,7 +106,7 @@ def _codex_cli_path() -> Iterator[None]:
     original_path = os.environ.get("PATH", "")
     resource_dir = os.environ.get("QUANT_AUDIT_CODEX_RESOURCE_DIR")
     resource_dir = resource_dir or DEFAULT_CODEX_RESOURCE_DIR
-    os.environ["PATH"] = f"{resource_dir}:{original_path}" if original_path else resource_dir
+    os.environ["PATH"] = f"{resource_dir}{os.pathsep}{original_path}" if original_path else resource_dir
     try:
         yield
     finally:
@@ -152,6 +172,16 @@ def _coerce_mapping(value: Any) -> dict[str, Any]:
     if isinstance(value, dict):
         return value
     return {}
+
+
+def _error_from_result(result: dict[str, Any], verdict_json: dict[str, Any]) -> str | None:
+    if result.get("error"):
+        return str(result["error"])
+    if not verdict_json:
+        return "schema_mismatch: missing verdict_json"
+    if "issues" not in verdict_json:
+        return "schema_mismatch: missing issues"
+    return None
 
 
 def _write_artifact(path: Path, payload: dict[str, Any]) -> None:

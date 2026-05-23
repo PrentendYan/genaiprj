@@ -7,11 +7,12 @@ from .base import ReviewerAdapter
 from .corax import CoraxOfflineAdapter
 from .corax_live import CoraxLiveAdapter
 from .darf import DarfOfflineAdapter
+from .darf_live import DarfLiveAdapter
 from .deterministic import DeterministicAdapter
 
 
 DEFAULT_ADAPTER_NAMES = ("single_llm_baseline", "darf", "corax")
-ADAPTER_NAMES = (*DEFAULT_ADAPTER_NAMES, "corax-live")
+ADAPTER_NAMES = (*DEFAULT_ADAPTER_NAMES, "corax-live", "darf-live")
 
 
 def build_adapter(
@@ -29,4 +30,6 @@ def build_adapter(
         return CoraxOfflineAdapter()
     if name == "corax-live":
         return CoraxLiveAdapter(model=model, run_dir=run_dir)
+    if name == "darf-live":
+        return DarfLiveAdapter(model=model, run_dir=run_dir)
     raise ValueError(f"Unknown adapter: {name}")
