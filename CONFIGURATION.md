@@ -53,13 +53,19 @@ codex exec --ephemeral --sandbox read-only -m gpt-5.4-mini "Return exactly: CODE
 claude auth status
 claude -p "Return exactly: CLAUDE_SMOKE_OK" --output-format text --no-session-persistence --tools "" --max-budget-usd 0.20
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-live --model gpt-5.4-mini --limit 1
+python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter darf-live --model gpt-5.4-mini --limit 1
+python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-live --model gpt-5.4-mini --limit 3 --sentinel-summary
 ```
 
 `/Users/yandong/.npm-global/bin/codex` 这个 npm global 入口在当前机器上不完整，缺少 native Codex binary。运行项目里的 live Codex wrapper 时，应优先使用 Codex Desktop bundled CLI：`/Applications/Codex.app/Contents/Resources/codex`。最简单做法是把 `/Applications/Codex.app/Contents/Resources` 放到 `PATH` 最前面。
 
-Live adapter 的模型不要写死。临时测试可以传 `--model gpt-5.4-mini`，最终评估可以传更强模型；也可以用 `QUANT_AUDIT_LIVE_MODEL` 设置默认模型。用 `--limit` 或 `--case-id` 可以控制调用次数和成本。
+Live adapter 的模型不要写死。临时测试可以传 `--model gpt-5.4-mini`，最终评估可以传更强模型；也可以用 `QUANT_AUDIT_LIVE_MODEL` 设置默认模型。用 `--limit` 或 `--case-id` 可以控制调用次数和成本。每个 live case 会保存到 `.runtime/runs/<run_id>/<adapter>/<case_id>.json`；一次 CLI evaluation 的汇总结果会保存到 `.runtime/runs/<run_id>/results.json`。
 
-Claude CLI 在 sandbox 里可能看不到本机登录态。确认 Claude 是否可用时，以本机环境中的 `claude auth status` 为准；当前已验证 `authMethod` 为 `claude.ai` 时，`claude -p` 可以正常返回模型输出。
+当前 live adapter 失败时会在输出和 artifact 中写入 `error` 字段。已覆盖的失败模式包括 Codex CLI 不可用、subprocess timeout / spawn failure、invalid JSON 或 schema mismatch。失败不会生成假 verdict，也不会静默 fallback 成离线结果。
+
+`--sentinel-summary` 会额外调用一次 `claude -p`，对最终 evaluation summary 做 CORAX Sentinel meta-review。Sentinel artifact 写到 `.runtime/runs/<run_id>/sentinel-summary.json`，包含 raw output、parsed JSON、latency、model 和 error。
+
+Claude CLI 在 sandbox 里可能看不到本机登录态。确认 Claude 是否可用时，以本机环境中的 `claude auth status` 为准；当前已验证 `authMethod` 为 `claude.ai` 时，`claude -p` 可以正常返回模型输出。Sentinel 模型可用 `--sentinel-model` 或 `QUANT_AUDIT_SENTINEL_MODEL` 指定；不指定时使用 Claude CLI 默认模型。
 
 ## DARF MCP 测试
 
