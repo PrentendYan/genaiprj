@@ -8,6 +8,7 @@ Uses subprocess.Popen to avoid security hook blacklist.
 import asyncio
 import json
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -23,6 +24,19 @@ _NETWORK_ERROR_RE = re.compile(
 )
 
 
+def _codex_command() -> str | None:
+    """Resolve a Codex CLI command that subprocess can execute on this OS."""
+
+    configured = os.environ.get("QUANT_AUDIT_CODEX_COMMAND")
+    if configured:
+        return configured
+    for candidate in ("codex.cmd", "codex.exe", "codex"):
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+    return None
+
+
 def _run_reviewer_sync(
     prompt: str,
     schema_path: str | None,
@@ -33,9 +47,21 @@ def _run_reviewer_sync(
     tmp_dir = tempfile.mkdtemp(prefix="corax-review-")
     output_file = str(Path(tmp_dir) / "verdict.json")
 
+    codex_cmd = _codex_command()
+    if codex_cmd is None:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        return {
+            "verdict_json": None,
+            "raw_output": "",
+            "latency_ms": 0,
+            "network_error": False,
+            "error": "codex spawn failed: codex CLI not found",
+        }
+
     cmd = [
-        "codex",
+        codex_cmd,
         "exec",
+        "-",
         "--ephemeral",
         "--skip-git-repo-check",
         "--sandbox",
