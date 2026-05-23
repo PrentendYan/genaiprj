@@ -82,10 +82,23 @@ def _snapshot_env() -> dict[str, Any]:
         "TMPDIR": os.environ.get("TMPDIR", ""),
         "PYTHON_VERSION": sys.version.split()[0],
         "PYTHON_EXECUTABLE": sys.executable,
-        "codex_resolved": shutil.which("codex"),
+        "codex_resolved": _codex_command(),
         "codex_env_keys": sorted(k for k in os.environ if k.startswith("CODEX")),
         "openai_env_keys": sorted(k for k in os.environ if k.startswith("OPENAI")),
     }
+
+
+def _codex_command() -> str | None:
+    """Resolve a Codex CLI command that subprocess can execute on this OS."""
+
+    configured = os.environ.get("QUANT_AUDIT_CODEX_COMMAND")
+    if configured:
+        return configured
+    for candidate in ("codex.cmd", "codex.exe", "codex"):
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -166,7 +179,8 @@ def _validate_verdict(obj: dict[str, Any]) -> dict[str, Any]:
 class CodexBackend:
     """Codex CLI backend implementing the ``ChallengerBackend`` protocol."""
 
-    def __init__(self) -> None:
+    def __init__(self, model: str | None = None) -> None:
+        self.model = model
         self._env_snapshot: dict[str, Any] | None = None
         self._metrics: dict[str, Any] = {
             "total_calls": 0,
@@ -180,7 +194,7 @@ class CodexBackend:
 
     def is_available(self) -> bool:
         """Check whether ``codex`` binary is on PATH."""
-        return shutil.which("codex") is not None
+        return _codex_command() is not None
 
     def get_metrics(self) -> dict[str, Any]:
         """Return current metrics with computed fail_rate and status."""
@@ -287,8 +301,12 @@ class CodexBackend:
                 tmp_path=str(tmp_path),
             )
 
-            proc = await asyncio.create_subprocess_exec(
-                "codex",
+            codex_cmd = _codex_command()
+            if codex_cmd is None:
+                return {"fallback": True, "reason": "codex_not_found"}
+
+            cmd = [
+                codex_cmd,
                 "exec",
                 "-",
                 "--skip-git-repo-check",
@@ -299,6 +317,12 @@ class CodexBackend:
                 tmp_dir,
                 "-o",
                 str(tmp_path),
+            ]
+            if self.model:
+                cmd.extend(["-m", self.model])
+
+            proc = await asyncio.create_subprocess_exec(
+                *cmd,
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -363,6 +387,8 @@ class CodexBackend:
             )
 
             result = _extract_json(raw_output)
+            if "error" not in result:
+                result["_raw_output"] = raw_output[:2000]
 
             if "error" in result:
                 _debug_log(
