@@ -1,0 +1,146 @@
+[
+  {
+    "case_id": "btc_future_return_feature",
+    "expected_issues": ["lookahead"],
+    "severity": "critical",
+    "rationale": "The feature matrix directly includes a future return created with a negative shift, so the model can see the prediction horizon."
+  },
+  {
+    "case_id": "btc_next_return_feature",
+    "expected_issues": ["lookahead"],
+    "severity": "critical",
+    "rationale": "The next-day return is shifted backward and used as an input feature, leaking future price movement into training."
+  },
+  {
+    "case_id": "btc_future_volume_signal",
+    "expected_issues": ["lookahead", "missing_costs"],
+    "severity": "critical",
+    "rationale": "The trading signal is generated from a future volume change that would not be known at decision time, and the reported strategy return is gross of trading costs."
+  },
+  {
+    "case_id": "btc_label_feature_alignment_error",
+    "expected_issues": ["lookahead"],
+    "severity": "critical",
+    "rationale": "The shifted future return is both the basis for the target and included in the feature list, creating target leakage."
+  },
+  {
+    "case_id": "global_zscore_before_split",
+    "expected_issues": ["normalization_leakage"],
+    "severity": "major",
+    "rationale": "The z-score uses full-sample mean and standard deviation before train/test separation, so test-period distribution information leaks into training."
+  },
+  {
+    "case_id": "global_standard_scaler_fit_transform",
+    "expected_issues": ["normalization_leakage"],
+    "severity": "major",
+    "rationale": "StandardScaler is fit on the full dataset before chronological splitting, which contaminates the training transformation."
+  },
+  {
+    "case_id": "global_minmax_feature",
+    "expected_issues": ["normalization_leakage"],
+    "severity": "major",
+    "rationale": "The min and max values are computed on all rows before the test set is separated, leaking future extrema."
+  },
+  {
+    "case_id": "market_cap_zscore_full_sample",
+    "expected_issues": ["normalization_leakage"],
+    "severity": "major",
+    "rationale": "The market-cap z-score is computed using full-sample statistics before the date cutoff is applied."
+  },
+  {
+    "case_id": "random_split_time_series",
+    "expected_issues": ["temporal_split"],
+    "severity": "critical",
+    "rationale": "A shuffled train_test_split breaks the chronological structure needed for a financial time-series evaluation."
+  },
+  {
+    "case_id": "random_split_after_sort",
+    "expected_issues": ["temporal_split"],
+    "severity": "critical",
+    "rationale": "Sorting by date is undone by a shuffled random split, so training can include observations after test observations."
+  },
+  {
+    "case_id": "random_split_return_prediction",
+    "expected_issues": ["temporal_split"],
+    "severity": "critical",
+    "rationale": "The return classifier uses a shuffled train/test split on time-indexed market observations."
+  },
+  {
+    "case_id": "random_split_backtest_evaluation",
+    "expected_issues": ["temporal_split"],
+    "severity": "critical",
+    "rationale": "The backtest evaluation randomly divides dated rows, which invalidates chronological out-of-sample testing."
+  },
+  {
+    "case_id": "missing_transaction_costs",
+    "expected_issues": ["missing_costs"],
+    "severity": "major",
+    "rationale": "The backtest reports strategy returns and Sharpe ratio without fees, slippage, commissions, or turnover costs."
+  },
+  {
+    "case_id": "gross_momentum_no_slippage",
+    "expected_issues": ["missing_costs"],
+    "severity": "major",
+    "rationale": "The strategy annualizes gross returns without modeling trading frictions."
+  },
+  {
+    "case_id": "volume_switching_no_costs",
+    "expected_issues": ["missing_costs"],
+    "severity": "major",
+    "rationale": "A high-turnover signal is evaluated with gross strategy returns and no cost adjustment."
+  },
+  {
+    "case_id": "cost_variable_declared_not_applied",
+    "expected_issues": ["missing_costs"],
+    "severity": "major",
+    "rationale": "A transaction cost variable is declared but never subtracted from strategy returns, making this an intentional subtle failure case."
+  },
+  {
+    "case_id": "unsupported_claim",
+    "expected_issues": ["unsupported_claim"],
+    "severity": "minor",
+    "rationale": "The writeup claims state-of-the-art performance and omits baselines, so the conclusion is not supported by evidence."
+  },
+  {
+    "case_id": "unsupported_visual_claim",
+    "expected_issues": ["unsupported_claim"],
+    "severity": "minor",
+    "rationale": "The writeup asserts outperformance from a chart without providing a baseline table or statistical support."
+  },
+  {
+    "case_id": "unsupported_small_sample_claim",
+    "expected_issues": ["unsupported_claim"],
+    "severity": "minor",
+    "rationale": "The writeup generalizes from a short BTC sample to live trading superiority without baselines or robustness checks."
+  },
+  {
+    "case_id": "honest_shifted_momentum",
+    "expected_issues": [],
+    "severity": "none",
+    "rationale": "The signal uses lagged information, applies an explicit turnover cost, and makes no unsupported performance claim."
+  },
+  {
+    "case_id": "walk_forward_scaler_clean",
+    "expected_issues": [],
+    "severity": "none",
+    "rationale": "The scaler is fit only on the training window and then applied to train and test separately."
+  },
+  {
+    "case_id": "chronological_split_clean",
+    "expected_issues": [],
+    "severity": "none",
+    "rationale": "The split preserves chronological order and does not use future features or global normalization."
+  },
+  {
+    "case_id": "buy_and_hold_report_clean",
+    "expected_issues": [],
+    "severity": "none",
+    "rationale": "The report frames the sample descriptively, includes a baseline reference, and avoids exaggerated unsupported claims."
+  },
+  {
+    "case_id": "cost_adjusted_rebalance_clean",
+    "expected_issues": [],
+    "severity": "none",
+    "rationale": "The strategy uses lagged inputs and subtracts turnover-based trading costs before computing Sharpe."
+  }
+]

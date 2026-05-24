@@ -2,55 +2,169 @@
   {
     "id": "btc_future_return_feature",
     "title": "Future return accidentally used as model feature",
+    "source_type": "feature_engineering_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "df['future_return'] = df['close_usd'].pct_change().shift(-1)\nfeatures = ['future_return', 'volume_usd']\nmodel.fit(df[features], df['signal'])"
+  },
+  {
+    "id": "btc_next_return_feature",
+    "title": "Next-day return feature leaks the prediction horizon",
+    "source_type": "feature_engineering_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "df['next_return'] = df['close_usd'].pct_change().shift(-1)\nX = df[['next_return', 'market_cap_usd']].dropna()\ny = (df['close_usd'].pct_change() > 0).astype(int).loc[X.index]"
+  },
+  {
+    "id": "btc_future_volume_signal",
+    "title": "Signal uses future volume change",
     "source_type": "quant_backtest_code",
     "data_fixture": "data/btc_usd_coingecko_sample.csv",
-    "expected_issues": ["lookahead"],
-    "severity": "critical",
-    "code": "df['future_return'] = df['close_usd'].pct_change().shift(-1)\nfeatures = ['future_return', 'volume_usd']\nmodel.fit(df[features], df['signal'])"
+    "code": "df['future_volume_change'] = df['volume_usd'].pct_change().shift(-1)\ndf['signal'] = (df['future_volume_change'] > 0).astype(int)\ndf['strategy_return'] = df['signal'] * df['close_usd'].pct_change()"
+  },
+  {
+    "id": "btc_label_feature_alignment_error",
+    "title": "Feature matrix includes the shifted target series",
+    "source_type": "model_training_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "df['future_ret'] = df['close_usd'].pct_change().shift(-1)\ndf['target'] = (df['future_ret'] > 0).astype(int)\nfeatures = ['market_cap_usd', 'volume_usd', 'future_ret']\nclassifier.fit(df[features].dropna(), df['target'].dropna())"
   },
   {
     "id": "global_zscore_before_split",
     "title": "Full-sample normalization before train/test split",
-    "source_type": "quant_backtest_code",
+    "source_type": "feature_engineering_code",
     "data_fixture": "data/btc_usd_coingecko_sample.csv",
-    "expected_issues": ["normalization_leakage"],
-    "severity": "major",
     "code": "df['z_volume'] = (df['volume_usd'] - df['volume_usd'].mean()) / df['volume_usd'].std()\ntrain = df[df['date'] < '2026-04-11']\ntest = df[df['date'] >= '2026-04-11']"
+  },
+  {
+    "id": "global_standard_scaler_fit_transform",
+    "title": "StandardScaler fit_transform runs before chronological split",
+    "source_type": "model_training_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "from sklearn.preprocessing import StandardScaler\nscaled = StandardScaler().fit_transform(df[['close_usd', 'volume_usd']])\ntrain = scaled[:6]\ntest = scaled[6:]"
+  },
+  {
+    "id": "global_minmax_feature",
+    "title": "Min-max feature uses full sample extrema",
+    "source_type": "feature_engineering_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "df['normalized_close'] = (df['close_usd'] - df['close_usd'].min()) / (df['close_usd'].max() - df['close_usd'].min())\ntrain = df.iloc[:6]\ntest = df.iloc[6:]"
+  },
+  {
+    "id": "market_cap_zscore_full_sample",
+    "title": "Market cap z-score is computed across the full dataset",
+    "source_type": "feature_engineering_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "df['z_market_cap'] = (df['market_cap_usd'] - df['market_cap_usd'].mean()) / df['market_cap_usd'].std()\ncutoff = '2026-04-10'\ntrain = df[df['date'] < cutoff]\ntest = df[df['date'] >= cutoff]"
   },
   {
     "id": "random_split_time_series",
     "title": "Random split used for financial time series",
+    "source_type": "model_training_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "from sklearn.model_selection import train_test_split\ntrain, test = train_test_split(df, test_size=0.25, shuffle=True, random_state=7)"
+  },
+  {
+    "id": "random_split_after_sort",
+    "title": "Sorted market data is randomized after date ordering",
+    "source_type": "model_training_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "from sklearn.model_selection import train_test_split\ndf = df.sort_values('date')\ntrain, test = train_test_split(df, test_size=0.30, shuffle=True)"
+  },
+  {
+    "id": "random_split_return_prediction",
+    "title": "Return classifier uses shuffled train-test split",
+    "source_type": "model_training_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "from sklearn.model_selection import train_test_split\ndf['ret_1d'] = df['close_usd'].pct_change()\nX_train, X_test, y_train, y_test = train_test_split(df[['volume_usd']], df['ret_1d'] > 0, shuffle=True, random_state=42)"
+  },
+  {
+    "id": "random_split_backtest_evaluation",
+    "title": "Backtest evaluation randomly splits time-indexed rows",
     "source_type": "quant_backtest_code",
     "data_fixture": "data/btc_usd_coingecko_sample.csv",
-    "expected_issues": ["temporal_split"],
-    "severity": "critical",
-    "code": "from sklearn.model_selection import train_test_split\ntrain, test = train_test_split(df, test_size=0.25, shuffle=True, random_state=7)"
+    "code": "from sklearn.model_selection import train_test_split\ndf = df.set_index('date')\ntrain_rows, test_rows = train_test_split(df, test_size=0.2, shuffle=True)\nscore = evaluate_strategy(train_rows, test_rows)"
   },
   {
     "id": "missing_transaction_costs",
     "title": "Backtest reports gross returns without costs",
     "source_type": "quant_backtest_code",
     "data_fixture": "data/btc_usd_coingecko_sample.csv",
-    "expected_issues": ["missing_costs"],
-    "severity": "major",
     "code": "df['position'] = (df['close_usd'].pct_change() > 0).astype(int)\ndf['strategy_return'] = df['position'].shift(1) * df['close_usd'].pct_change()\nsharpe = df['strategy_return'].mean() / df['strategy_return'].std()"
   },
   {
-    "id": "honest_shifted_momentum",
-    "title": "Simple shifted momentum with explicit costs",
+    "id": "gross_momentum_no_slippage",
+    "title": "Momentum strategy annualizes gross Sharpe without frictions",
     "source_type": "quant_backtest_code",
     "data_fixture": "data/btc_usd_coingecko_sample.csv",
-    "expected_issues": [],
-    "severity": "none",
-    "code": "df['ret_1d'] = df['close_usd'].pct_change()\ndf['signal'] = (df['ret_1d'].rolling(3).mean().shift(1) > 0).astype(int)\ndf['turnover'] = df['signal'].diff().abs().fillna(0)\ndf['strategy_return'] = df['signal'].shift(1) * df['ret_1d'] - 0.001 * df['turnover']"
+    "code": "df['signal'] = (df['close_usd'].pct_change().rolling(3).mean().shift(1) > 0).astype(int)\ndf['strategy_return'] = df['signal'] * df['close_usd'].pct_change()\nsharpe = 252 ** 0.5 * df['strategy_return'].mean() / df['strategy_return'].std()"
+  },
+  {
+    "id": "volume_switching_no_costs",
+    "title": "High-turnover volume strategy omits transaction costs",
+    "source_type": "quant_backtest_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "df['signal'] = (df['volume_usd'] > df['volume_usd'].rolling(2).mean()).astype(int)\ndf['strategy_return'] = df['signal'].shift(1) * df['close_usd'].pct_change()\nsharpe = df['strategy_return'].mean() / df['strategy_return'].std()"
+  },
+  {
+    "id": "cost_variable_declared_not_applied",
+    "title": "Transaction cost variable is declared but never applied",
+    "source_type": "quant_backtest_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "transaction_cost_bps = 10\ndf['position'] = (df['close_usd'].pct_change().shift(1) > 0).astype(int)\ndf['strategy_return'] = df['position'] * df['close_usd'].pct_change()\nsharpe = df['strategy_return'].mean() / df['strategy_return'].std()"
   },
   {
     "id": "unsupported_claim",
     "title": "Report claims state-of-the-art performance without baseline",
     "source_type": "research_writeup",
     "data_fixture": "data/btc_usd_coingecko_sample.csv",
-    "expected_issues": ["unsupported_claim"],
-    "severity": "minor",
     "code": "The agentic strategy is clearly state-of-the-art and beats all alternatives. We omit baseline comparisons because the equity curve is visually compelling."
+  },
+  {
+    "id": "unsupported_visual_claim",
+    "title": "Report declares outperformance from visual inspection only",
+    "source_type": "research_writeup",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "The chart clearly shows this BTC timing model outperforming buy-and-hold. No baseline table is included because the visual evidence is enough."
+  },
+  {
+    "id": "unsupported_small_sample_claim",
+    "title": "Small-sample writeup overstates generalization",
+    "source_type": "research_writeup",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "This short BTC sample proves the strategy will beat all alternatives in live trading. We report no baseline and no robustness checks."
+  },
+  {
+    "id": "honest_shifted_momentum",
+    "title": "Simple shifted momentum with explicit costs",
+    "source_type": "quant_backtest_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "df['ret_1d'] = df['close_usd'].pct_change()\ndf['signal'] = (df['ret_1d'].rolling(3).mean().shift(1) > 0).astype(int)\ndf['turnover'] = df['signal'].diff().abs().fillna(0)\ndf['strategy_return'] = df['signal'].shift(1) * df['ret_1d'] - 0.001 * df['turnover']"
+  },
+  {
+    "id": "walk_forward_scaler_clean",
+    "title": "Scaler is fit on training window and applied to test window",
+    "source_type": "model_training_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "from sklearn.preprocessing import StandardScaler\ntrain = df[df['date'] < '2026-04-11'].copy()\ntest = df[df['date'] >= '2026-04-11'].copy()\nscaler = StandardScaler().fit(train[['volume_usd']])\ntrain['z_volume'] = scaler.transform(train[['volume_usd']])\ntest['z_volume'] = scaler.transform(test[['volume_usd']])"
+  },
+  {
+    "id": "chronological_split_clean",
+    "title": "Chronological train-test split preserves time ordering",
+    "source_type": "model_training_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "df = df.sort_values('date')\ntrain = df.iloc[:7]\ntest = df.iloc[7:]\nmodel.fit(train[['volume_usd']], train['close_usd'].pct_change().fillna(0) > 0)"
+  },
+  {
+    "id": "buy_and_hold_report_clean",
+    "title": "Report describes a descriptive baseline without exaggerated claims",
+    "source_type": "research_writeup",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "This BTC sample is used as a descriptive benchmark only. The report does not claim statistical superiority and compares the strategy to buy-and-hold before discussing limitations."
+  },
+  {
+    "id": "cost_adjusted_rebalance_clean",
+    "title": "Rebalance strategy subtracts turnover-based costs",
+    "source_type": "quant_backtest_code",
+    "data_fixture": "data/btc_usd_coingecko_sample.csv",
+    "code": "df['ret_1d'] = df['close_usd'].pct_change()\ndf['signal'] = (df['volume_usd'].shift(1) > df['volume_usd'].rolling(3).mean().shift(1)).astype(int)\ndf['turnover'] = df['signal'].diff().abs().fillna(0)\ndf['strategy_return'] = df['signal'].shift(1) * df['ret_1d'] - 0.0015 * df['turnover']\nsharpe = df['strategy_return'].mean() / df['strategy_return'].std()"
   }
 ]

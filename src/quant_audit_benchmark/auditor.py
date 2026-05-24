@@ -34,6 +34,7 @@ ISSUE_PATTERNS: dict[str, list[re.Pattern[str]]] = {
     ],
 }
 
+VALID_ISSUES = frozenset(ISSUE_PATTERNS)
 COST_TERMS = re.compile(r"cost|fee|slippage|commission|turnover", re.IGNORECASE)
 
 PROFILE_THRESHOLDS = {
@@ -58,33 +59,68 @@ class AuditCase:
 
     case_id: str
     title: str
+    source_type: str
     code: str
     expected_issues: frozenset[str]
     severity: str
+    rationale: str
     data_fixture: Path
 
 
-def load_cases(path: str | Path, root: str | Path | None = None) -> list[AuditCase]:
+def load_cases(
+    path: str | Path,
+    root: str | Path | None = None,
+    annotations_path: str | Path | None = None,
+) -> list[AuditCase]:
     """Load benchmark cases and validate referenced data fixtures."""
 
     case_path = Path(path)
     base = Path(root) if root is not None else case_path.parent.parent
     raw_cases = json.loads(case_path.read_text(encoding="utf-8"))
+    if not isinstance(raw_cases, list):
+        raise ValueError(f"Benchmark cases must be a JSON list: {case_path}")
+    annotations = _load_annotations(case_path, annotations_path)
     cases: list[AuditCase] = []
+    seen_case_ids: set[str] = set()
 
     for item in raw_cases:
-        fixture = base / item["data_fixture"]
+        if not isinstance(item, dict):
+            raise ValueError(f"Each benchmark case must be an object: {case_path}")
+        case_id = _required_str(item, "id", "case")
+        if case_id in seen_case_ids:
+            raise ValueError(f"Duplicate benchmark case id: {case_id}")
+        seen_case_ids.add(case_id)
+
+        fixture = base / _required_str(item, "data_fixture", case_id)
         validate_real_data_fixture(fixture)
+        if annotations is None:
+            expected_issues = _issue_set(item.get("expected_issues"), case_id)
+            severity = _required_str(item, "severity", case_id)
+            rationale = str(item.get("rationale", "Inline benchmark annotation."))
+        else:
+            if case_id not in annotations:
+                raise ValueError(f"Missing annotation for benchmark case: {case_id}")
+            annotation = annotations[case_id]
+            expected_issues = annotation["expected_issues"]
+            severity = annotation["severity"]
+            rationale = annotation["rationale"]
         cases.append(
             AuditCase(
-                case_id=item["id"],
-                title=item["title"],
-                code=item["code"],
-                expected_issues=frozenset(item["expected_issues"]),
-                severity=item["severity"],
+                case_id=case_id,
+                title=_required_str(item, "title", case_id),
+                source_type=_required_str(item, "source_type", case_id),
+                code=_required_str(item, "code", case_id),
+                expected_issues=frozenset(expected_issues),
+                severity=severity,
+                rationale=rationale,
                 data_fixture=fixture,
             )
         )
+
+    if annotations is not None:
+        unknown_annotations = sorted(set(annotations).difference(seen_case_ids))
+        if unknown_annotations:
+            raise ValueError(f"Annotations reference unknown case ids: {unknown_annotations}")
     return cases
 
 
@@ -105,6 +141,56 @@ def validate_real_data_fixture(path: Path) -> None:
     missing = required.difference(rows[0])
     if missing:
         raise ValueError(f"Real-data fixture {path} is missing columns: {sorted(missing)}")
+
+
+def _load_annotations(
+    case_path: Path, annotations_path: str | Path | None
+) -> dict[str, dict[str, object]] | None:
+    if annotations_path is None:
+        candidate = case_path.with_name("annotations.json")
+        if not candidate.exists():
+            return None
+        annotation_path = candidate
+    else:
+        annotation_path = Path(annotations_path)
+
+    raw_annotations = json.loads(annotation_path.read_text(encoding="utf-8"))
+    if not isinstance(raw_annotations, list):
+        raise ValueError(f"Benchmark annotations must be a JSON list: {annotation_path}")
+
+    annotations: dict[str, dict[str, object]] = {}
+    for item in raw_annotations:
+        if not isinstance(item, dict):
+            raise ValueError(f"Each annotation must be an object: {annotation_path}")
+        case_id = _required_str(item, "case_id", "annotation")
+        if case_id in annotations:
+            raise ValueError(f"Duplicate annotation for benchmark case: {case_id}")
+        annotations[case_id] = {
+            "expected_issues": _issue_set(item.get("expected_issues"), case_id),
+            "severity": _required_str(item, "severity", case_id),
+            "rationale": _required_str(item, "rationale", case_id),
+        }
+    return annotations
+
+
+def _required_str(item: dict[str, object], field: str, context: str) -> str:
+    value = item.get(field)
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"Missing or invalid {field!r} for {context}.")
+    return value
+
+
+def _issue_set(value: object, context: str) -> frozenset[str]:
+    if not isinstance(value, list):
+        raise ValueError(f"Missing or invalid expected_issues for {context}.")
+    issues: set[str] = set()
+    for issue in value:
+        if not isinstance(issue, str):
+            raise ValueError(f"Invalid issue value for {context}: {issue!r}")
+        if issue not in VALID_ISSUES:
+            raise ValueError(f"Unknown issue type for {context}: {issue}")
+        issues.add(issue)
+    return frozenset(issues)
 
 
 def audit_case(case: AuditCase, profile: str) -> list[AuditFinding]:

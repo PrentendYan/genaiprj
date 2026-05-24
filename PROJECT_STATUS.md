@@ -7,7 +7,7 @@
 - 整理并迁入 `commands/darf.md`、`commands/corax.md`，保留 phase loop、gate、fix cycle、mutation ladder 等流程说明。
 - 将原本依赖个人目录的路径改成可配置模式。
 - 搭建了一个可运行的 benchmark scaffold。
-- 接入了可运行的 reviewer adapter：`single_llm_baseline`、`darf`、`corax`。
+- 接入了可运行的 reviewer adapter：`single_llm_baseline`、`darf`、`corax`、`corax-live`、`darf-live`。
 - `darf` adapter 会调用 `integrations/darf_mcp` 的 normalization MCP scan。
 - `corax` adapter 会调用 `integrations/corax_mcp` 的 lookahead scan、normalization scan 和 blind brief stripper。
 - 接入了 `corax-live` adapter，可以真实调用本机 Codex CLI 做 live reviewer。
@@ -16,9 +16,10 @@
 - live adapter 支持通过 `--model` 或 `QUANT_AUDIT_LIVE_MODEL` 切换模型。
 - live adapter 支持通过 `--limit` 或 `--case-id` 控制调用次数和成本。
 - live adapter 会保存 per-case artifact 和 aggregate `results.json`，失败时记录 error 而不是静默 fallback。
-- 添加了 6 个初始审查案例。
+- 添加了 24 个 labeled benchmark cases，覆盖 5 类 audit issue 和 clean cases。
+- 将 benchmark artifacts 与 ground-truth annotations 拆分到 `cases.json` 和 `annotations.json`。
+- 增加了 annotation / fixture 校验测试，覆盖缺标签、重复 case id、未知 issue type、缺失 fixture 和空 fixture。
 - 添加了一个 BTC 真实数据样例。
-- 添加了基础测试。
 
 ## 当前可以运行
 
@@ -44,7 +45,8 @@ python -m pytest tests
 
 已验证结果：
 
-- benchmark tests：9 passed。
+- benchmark tests：15 passed。
+- CORAX offline adapter on 24 current cases：precision 1.0、recall 0.95、F1 0.9744。
 - DARF adapter CLI：可运行。
 - CORAX adapter CLI：可运行。
 - CORAX live adapter：已用 `gpt-5.4-mini` 跑通 `btc_future_return_feature`，能返回 structured verdict 并保存 run artifact。
@@ -81,17 +83,23 @@ python -m pytest tests
 - Sentinel protocol 文档
 - schemas：producer summary、reviewer verdict、sentinel verdict
 
+### Benchmark / Part 2
+
+- `benchmark_cases/cases.json` 保存被审查 artifact。
+- `benchmark_cases/annotations.json` 保存人工 ground-truth labels、severity 和 rationale。
+- loader 会校验缺标签、重复 case id、未知 issue type、缺失 fixture 和空 fixture。
+- `docs/case_coverage_summary.md` 记录当前 issue coverage 和 source-type coverage。
+
 ## 当前还缺什么
 
-- DARF / CORAX 已经以 offline adapter 形式接入 benchmark。
+- 当前 24 个 case 仍然只使用一个 BTC 真实数据 fixture。
+- 还需要 Route B 的更多真实数据集、真实 notebook/script 或真实 report excerpt。
 - CORAX MCP 还没有像 DARF 那样完整的测试套件。
 - Claude Sentinel 已有最小 Python wrapper，但只覆盖 final summary meta-review，还没有做 phase-level gate integration。
 - DARF live challenger 已接到 benchmark CLI，但还需要真实模型 smoke test 记录。
 - CORAX live reviewer 已经接到 benchmark CLI，但还需要更多真实 case 和失败模式测试。
 - lessons DB migration 还需要整理成项目内脚本。
-- benchmark labels 还没有和 case 分离。
-- case 数量还少，需要更多真实 notebook / script。
-- raw agent output、cost、latency、failure case 还没有统一保存格式。
+- raw agent output、cost、latency、failure case 已有基本保存路径，但 cost estimate 和更细的 schema validation 还需要完善。
 
 ## 建议下一步
 
@@ -103,8 +111,7 @@ python -m pytest tests
 
 ### Benchmark 扩展
 
-- 把 `expected_issues` 从 `cases.json` 拆到 `annotations.json`。
-- 加真实 notebook / script。
+- 加真实数据集、真实 notebook / script 和真实 report excerpt。
 - 至少保留：
   - clean case
   - obvious bug case
