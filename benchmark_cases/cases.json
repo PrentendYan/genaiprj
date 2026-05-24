@@ -166,5 +166,152 @@
     "source_type": "quant_backtest_code",
     "data_fixture": "data/btc_usd_coingecko_sample.csv",
     "code": "df['ret_1d'] = df['close_usd'].pct_change()\ndf['signal'] = (df['volume_usd'].shift(1) > df['volume_usd'].rolling(3).mean().shift(1)).astype(int)\ndf['turnover'] = df['signal'].diff().abs().fillna(0)\ndf['strategy_return'] = df['signal'].shift(1) * df['ret_1d'] - 0.0015 * df['turnover']\nsharpe = df['strategy_return'].mean() / df['strategy_return'].std()"
+  },
+  {
+    "id": "notebook_vectorized_lagged_signal_clean",
+    "title": "Vectorized backtest tutorial uses lagged moving-average signal",
+    "source_type": "real_notebook_workflow",
+    "data_fixture": "data/Vectorized_Backtest_Tutorial.ipynb",
+    "code": "# Source: Vectorized_Backtest_Tutorial.ipynb cells 14-16\nspx_returns = close_prices.pct_change()\nstrategy_returns = spx_returns * signals['signal'].shift(1)"
+  },
+  {
+    "id": "notebook_vectorized_vol_target_clean",
+    "title": "Vectorized backtest tutorial lags both signal and volatility target",
+    "source_type": "real_notebook_workflow",
+    "data_fixture": "data/Vectorized_Backtest_Tutorial.ipynb",
+    "code": "# Source: Vectorized_Backtest_Tutorial.ipynb cells 19-21\nsignals['stdev'] = spx_returns.rolling(22).std() * np.sqrt(252)\nsignals['vol_tgt'] = (0.15 / signals['stdev']).clip(0, 2)\nvol_signal = signals['signal'].shift(1) * signals['vol_tgt'].shift(1)\nstrategy_voltgt_returns = spx_returns * vol_signal"
+  },
+  {
+    "id": "notebook_vectorized_tearsheet_before_costs",
+    "title": "Vectorized backtest tutorial reports strategy performance before costs",
+    "source_type": "real_notebook_workflow",
+    "data_fixture": "data/Vectorized_Backtest_Tutorial.ipynb",
+    "code": "# Source: Vectorized_Backtest_Tutorial.ipynb cell 25\nqs.reports.full(\n    returns=strategy_voltgt_returns,\n    benchmark=strategy_returns,\n    output='report.html',\n    title='Volatility Targeted Strategy vs. Basic Strategy'\n)\nsharpe = strategy_voltgt_returns.mean() / strategy_voltgt_returns.std() * np.sqrt(252)"
+  },
+  {
+    "id": "notebook_transaction_costs_after_cost_clean",
+    "title": "Transaction-cost notebook compares Sharpe before and after costs",
+    "source_type": "real_notebook_workflow",
+    "data_fixture": "data/Intro_Transaction_Costs.ipynb",
+    "code": "# Source: Intro_Transaction_Costs.ipynb cells 29-32\ntotal_costs = slippage + spread + brokerage\nafter_cost = strategy_voltgt_returns - total_costs\nsr_before = strategy_voltgt_returns.mean() / strategy_voltgt_returns.std() * np.sqrt(252)\nsr_after = after_cost.mean() / after_cost.std() * np.sqrt(252)\nprint(f'Sharpe Ratio Before: {sr_before.round(2)}')\nprint(f'Sharpe Ratio After: {sr_after.round(2)}')"
+  },
+  {
+    "id": "notebook_transaction_turnover_alignment_ambiguous",
+    "title": "Transaction-cost notebook shifts turnover to execution date",
+    "source_type": "real_notebook_workflow",
+    "data_fixture": "data/Intro_Transaction_Costs.ipynb",
+    "code": "# Source: Intro_Transaction_Costs.ipynb cell 13\nturnover = abs(vol_signal.diff())\n# Shift by -1 to get the date at which the transaction occurred, which was at close yesterday.\nturnover = turnover.shift(-1)\nbrokerage = turnover * brokerage_fees"
+  },
+  {
+    "id": "quotemedia_adjusted_close_momentum_clean",
+    "title": "QuoteMedia adjusted-close momentum uses lagged signal and costs",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "prices = prices.sort_values(['ticker', 'date'])\nprices['ret_1d'] = prices.groupby('ticker')['adj_close'].pct_change()\nprices['signal'] = (prices.groupby('ticker')['ret_1d'].transform(lambda s: s.rolling(5).mean()).shift(1) > 0).astype(int)\nprices['turnover'] = prices.groupby('ticker')['signal'].diff().abs().fillna(0)\nprices['strategy_return'] = prices['signal'].shift(1) * prices['ret_1d'] - 0.0005 * prices['turnover']"
+  },
+  {
+    "id": "quotemedia_future_return_feature",
+    "title": "QuoteMedia stock model uses next-day adjusted return as a feature",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "prices = prices.sort_values(['ticker', 'date'])\nprices['future_return'] = prices.groupby('ticker')['adj_close'].pct_change().shift(-1)\nfeatures = ['future_return', 'volume', 'adj_close']\nmodel.fit(prices[features].dropna(), prices['target'].dropna())"
+  },
+  {
+    "id": "quotemedia_global_zscore_before_split",
+    "title": "QuoteMedia adjusted close z-score is fit on the full stock sample",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "prices['z_adj_close'] = (prices['adj_close'] - prices['adj_close'].mean()) / prices['adj_close'].std()\ntrain = prices[prices['date'] < '2022-10-01']\ntest = prices[prices['date'] >= '2022-10-01']"
+  },
+  {
+    "id": "quotemedia_random_split_stocks",
+    "title": "QuoteMedia stock panel is randomly split across time",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "from sklearn.model_selection import train_test_split\nprices = prices.sort_values(['ticker', 'date'])\ntrain, test = train_test_split(prices, test_size=0.25, shuffle=True, random_state=11)"
+  },
+  {
+    "id": "quotemedia_gross_stock_strategy_no_costs",
+    "title": "QuoteMedia stock rotation reports gross Sharpe without costs",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "prices = prices.sort_values(['ticker', 'date'])\nprices['ret_1d'] = prices.groupby('ticker')['adj_close'].pct_change()\nprices['signal'] = (prices.groupby('ticker')['ret_1d'].transform(lambda s: s.rolling(10).mean()).shift(1) > 0).astype(int)\nprices['strategy_return'] = prices['signal'].shift(1) * prices['ret_1d']\nsharpe = prices['strategy_return'].mean() / prices['strategy_return'].std()"
+  },
+  {
+    "id": "quotemedia_unsubstantiated_stock_claim",
+    "title": "QuoteMedia stock writeup claims superiority without baseline",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "The QuoteMedia stock rotation is clearly state-of-the-art and beats all alternatives across AAPL, MSFT, JPM, XOM, and SPY. We provide no baseline because the selected equity curve is visually compelling."
+  },
+  {
+    "id": "quotemedia_next_return_rank_feature",
+    "title": "QuoteMedia cross-sectional rank uses next-day returns",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "prices = prices.sort_values(['ticker', 'date'])\nprices['next_return'] = prices.groupby('ticker')['adj_close'].pct_change().shift(-1)\nprices['rank_feature'] = prices.groupby('date')['next_return'].rank(pct=True)\nmodel.fit(prices[['rank_feature', 'volume']].dropna(), prices['target'].dropna())"
+  },
+  {
+    "id": "quotemedia_future_winner_signal",
+    "title": "QuoteMedia strategy selects future winners before trading",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "prices = prices.sort_values(['ticker', 'date'])\nprices['future_ret'] = prices.groupby('ticker')['adj_close'].pct_change().shift(-1)\nprices['signal'] = (prices.groupby('date')['future_ret'].rank(pct=True) > 0.8).astype(int)\nprices['strategy_return'] = prices['signal'] * prices.groupby('ticker')['adj_close'].pct_change()"
+  },
+  {
+    "id": "quotemedia_standard_scaler_full_panel",
+    "title": "QuoteMedia panel StandardScaler fit_transform uses all dates",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "from sklearn.preprocessing import StandardScaler\nfeatures = prices[['adj_close', 'volume']].dropna()\nscaled_features = StandardScaler().fit_transform(features)\ntrain = scaled_features[:900]\ntest = scaled_features[900:]"
+  },
+  {
+    "id": "quotemedia_global_volume_normalized",
+    "title": "QuoteMedia volume normalization uses full-sample extrema",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "prices['normalized_volume'] = (prices['volume'] - prices['volume'].min()) / (prices['volume'].max() - prices['volume'].min())\ntrain = prices[prices['date'] < '2022-09-01']\ntest = prices[prices['date'] >= '2022-09-01']"
+  },
+  {
+    "id": "quotemedia_random_split_multi_stock_features",
+    "title": "QuoteMedia multi-stock features are randomly split",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "from sklearn.model_selection import train_test_split\nprices['ret_1d'] = prices.groupby('ticker')['adj_close'].pct_change()\nfeatures = prices[['ticker', 'date', 'ret_1d', 'volume']].dropna()\ntrain, test = train_test_split(features, test_size=0.2, shuffle=True, random_state=21)"
+  },
+  {
+    "id": "quotemedia_shuffled_alpha_validation",
+    "title": "QuoteMedia alpha validation shuffles dated stock observations",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "from sklearn.model_selection import train_test_split\nprices = prices.sort_values(['date', 'ticker'])\nalpha_rows = prices[['date', 'ticker', 'adj_close', 'volume']].dropna()\ntrain_rows, test_rows = train_test_split(alpha_rows, test_size=0.30, shuffle=True)\nvalidate_alpha(train_rows, test_rows)"
+  },
+  {
+    "id": "quotemedia_open_close_strategy_no_costs",
+    "title": "QuoteMedia open-close strategy reports gross returns only",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "prices['intraday_ret'] = prices['close'] / prices['open'] - 1\nprices['signal'] = (prices['adj_close'].shift(1) > prices['adj_close'].rolling(5).mean().shift(1)).astype(int)\nprices['strategy_return'] = prices['signal'] * prices['intraday_ret']\nsharpe = prices['strategy_return'].mean() / prices['strategy_return'].std()"
+  },
+  {
+    "id": "quotemedia_high_turnover_rebalance_no_costs",
+    "title": "QuoteMedia daily rebalance omits frictions",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "prices['ret_1d'] = prices.groupby('ticker')['adj_close'].pct_change()\nprices['signal'] = (prices.groupby('date')['volume'].rank(pct=True) > 0.5).astype(int)\nprices['strategy_return'] = prices['signal'].shift(1) * prices['ret_1d']\nsharpe = prices['strategy_return'].mean() / prices['strategy_return'].std()"
+  },
+  {
+    "id": "quotemedia_top_stock_claim_no_evidence",
+    "title": "QuoteMedia report overclaims selected-stock performance",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "The five-stock QuoteMedia sample clearly outperforms every conventional equity benchmark. We omit baseline comparisons because AAPL and MSFT make the result visually obvious."
+  },
+  {
+    "id": "quotemedia_train_window_scaler_clean",
+    "title": "QuoteMedia scaler is fit inside the training window",
+    "source_type": "real_stock_data_workflow",
+    "data_fixture": "data/quotemedia_prices_sample.csv",
+    "code": "from sklearn.preprocessing import StandardScaler\nprices = prices.sort_values(['ticker', 'date'])\ntrain = prices[prices['date'] < '2022-10-01'].copy()\ntest = prices[prices['date'] >= '2022-10-01'].copy()\nscaler = StandardScaler().fit(train[['adj_close', 'volume']])\ntrain[['scaled_price', 'scaled_volume']] = scaler.transform(train[['adj_close', 'volume']])\ntest[['scaled_price', 'scaled_volume']] = scaler.transform(test[['adj_close', 'volume']])"
   }
 ]

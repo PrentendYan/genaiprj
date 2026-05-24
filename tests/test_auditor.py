@@ -18,10 +18,26 @@ CASES = ROOT / "benchmark_cases" / "cases.json"
 class AuditHarnessTests(unittest.TestCase):
     def test_load_cases_validates_real_fixture(self) -> None:
         cases = load_cases(CASES, root=ROOT)
-        self.assertEqual(len(cases), 24)
+        self.assertEqual(len(cases), 45)
         self.assertTrue(cases[0].data_fixture.exists())
         self.assertEqual(cases[0].source_type, "feature_engineering_code")
         self.assertIn("future return", cases[0].rationale)
+
+    def test_load_cases_accepts_notebook_workflow_fixture(self) -> None:
+        cases = {case.case_id: case for case in load_cases(CASES, root=ROOT)}
+        notebook_case = cases["notebook_vectorized_lagged_signal_clean"]
+
+        self.assertEqual(notebook_case.data_fixture.suffix, ".ipynb")
+        self.assertEqual(notebook_case.source_type, "real_notebook_workflow")
+        self.assertEqual(notebook_case.expected_issues, frozenset())
+
+    def test_load_cases_accepts_quotemedia_stock_fixture(self) -> None:
+        cases = {case.case_id: case for case in load_cases(CASES, root=ROOT)}
+        stock_case = cases["quotemedia_adjusted_close_momentum_clean"]
+
+        self.assertEqual(stock_case.data_fixture.name, "quotemedia_prices_sample.csv")
+        self.assertEqual(stock_case.source_type, "real_stock_data_workflow")
+        self.assertEqual(stock_case.expected_issues, frozenset())
 
     def test_detects_lookahead_case(self) -> None:
         cases = {case.case_id: case for case in load_cases(CASES, root=ROOT)}

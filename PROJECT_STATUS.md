@@ -16,7 +16,9 @@
 - live adapter 支持通过 `--model` 或 `QUANT_AUDIT_LIVE_MODEL` 切换模型。
 - live adapter 支持通过 `--limit` 或 `--case-id` 控制调用次数和成本。
 - live adapter 会保存 per-case artifact 和 aggregate `results.json`，失败时记录 error 而不是静默 fallback。
-- 添加了 24 个 labeled benchmark cases，覆盖 5 类 audit issue 和 clean cases。
+- 添加了 45 个 labeled benchmark cases，覆盖 5 类 audit issue 和 clean cases。
+- 纳入了两个真实 notebook workflow artifacts，用于补充 Route B 的真实 workflow case。
+- 纳入了一个 QuoteMedia 股票价格样本和 ticker 映射样本，用于补充真实股票数据 case。
 - 将 benchmark artifacts 与 ground-truth annotations 拆分到 `cases.json` 和 `annotations.json`。
 - 增加了 annotation / fixture 校验测试，覆盖缺标签、重复 case id、未知 issue type、缺失 fixture 和空 fixture。
 - 添加了一个 BTC 真实数据样例。
@@ -45,8 +47,8 @@ python -m pytest tests
 
 已验证结果：
 
-- benchmark tests：15 passed。
-- CORAX offline adapter on 24 current cases：precision 1.0、recall 0.95、F1 0.9744。
+- benchmark tests：22 passed。
+- CORAX offline adapter on 45 current cases：precision 0.9459、recall 0.9722、F1 0.9589。
 - DARF adapter CLI：可运行。
 - CORAX adapter CLI：可运行。
 - CORAX live adapter：已用 `gpt-5.4-mini` 跑通 `btc_future_return_feature`，能返回 structured verdict 并保存 run artifact。
@@ -92,8 +94,8 @@ python -m pytest tests
 
 ## 当前还缺什么
 
-- 当前 24 个 case 仍然只使用一个 BTC 真实数据 fixture。
-- 还需要 Route B 的更多真实数据集、真实 notebook/script 或真实 report excerpt。
+- 当前 45 个 case 已包含一个 BTC 真实数据 fixture、一个 QuoteMedia 股票样本和两个真实 notebook workflow artifacts。
+- 后续还可以继续加入更多真实数据集、真实 notebook/script 或真实 report excerpt。
 - CORAX MCP 还没有像 DARF 那样完整的测试套件。
 - Claude Sentinel 已有最小 Python wrapper，但只覆盖 final summary meta-review，还没有做 phase-level gate integration。
 - DARF live challenger 已接到 benchmark CLI，但还需要真实模型 smoke test 记录。

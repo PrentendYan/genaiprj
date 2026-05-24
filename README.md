@@ -12,8 +12,8 @@
 
 - 一个可以直接运行的 benchmark harness。
 - 五个 reviewer adapter：`single_llm_baseline`、`darf`、`corax`、`corax-live`、`darf-live`。
-- 24 个 labeled benchmark cases，覆盖 lookahead、normalization leakage、temporal split、missing costs、unsupported claim 和 clean cases。
-- 一个小型 BTC 真实数据样例，避免项目变成纯 synthetic demo。
+- 45 个 labeled benchmark cases，覆盖 lookahead、normalization leakage、temporal split、missing costs、unsupported claim 和 clean cases。
+- 一个小型 BTC 真实数据样例、一个 QuoteMedia 股票样本和两个真实 notebook workflow artifacts，避免项目变成纯 synthetic demo。
 - cases 和 ground-truth annotations 已拆分，方便扩展真实数据源和人工复核标签。
 - live adapter 支持 `--model`、`--limit`、`--case-id`，并保存 per-case artifact 和 aggregate `results.json`。
 - 最小 Claude Sentinel summary wrapper，可用 `--sentinel-summary` 对最终 evaluation summary 做 meta-review。
@@ -109,10 +109,10 @@ python -m pytest tests
 
 当前已验证结果：
 
-- `python -m unittest discover -s tests`：15 passed。
+- `python -m unittest discover -s tests`：22 passed。
 - `python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter darf`：可运行。
 - `python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax`：可运行。
-- CORAX offline adapter on 24 current cases：precision 1.0、recall 0.95、F1 0.9744。
+- CORAX offline adapter on 45 current cases：precision 0.9459、recall 0.9722、F1 0.9589。
 - `corax-live` 已用 `gpt-5.4-mini` 跑通 `btc_future_return_feature`，能返回 structured verdict 并保存 run artifact。
 - `darf-live` 已接入 CLI 和 mock tests；真实调用需要本机 Codex Desktop bundled CLI 可用。
 - Claude Sentinel summary wrapper 已接入 CLI 和 mock tests；真实调用需要本机 Claude CLI 可用并已登录。
@@ -139,7 +139,7 @@ python -m pytest tests
 
 ## 当前限制
 
-- 当前 24 个 case 仍然都使用同一个 BTC 真实数据 fixture；后续 Route B 扩展应该加入更多真实数据集、真实 notebook/script 或真实 report excerpt。
+- 当前 45 个 case 已包含 BTC 真实数据 fixture、QuoteMedia 股票样本和两个真实 notebook workflow artifacts；后续 Route B 扩展可以继续加入更多真实数据集、真实 notebook/script 或真实 report excerpt。
 - `darf-live` 已接到 benchmark CLI，但还需要真实模型 smoke test 记录。
 - Claude Sentinel summary wrapper 已有最小 Python wrapper，但还需要真实 Claude CLI smoke test，并且还没有接入每个 CORAX phase 的完整 gate protocol。
 - CORAX MCP 代码已经放进项目，但 producer / reviewer subprocess wrapper 还缺直接测试。

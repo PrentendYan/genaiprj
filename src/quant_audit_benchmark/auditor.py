@@ -125,7 +125,7 @@ def load_cases(
 
 
 def validate_real_data_fixture(path: Path) -> None:
-    """Raise a clear error if the required real-data fixture is missing."""
+    """Raise a clear error if the required real-data/workflow fixture is missing."""
 
     if not path.exists():
         raise FileNotFoundError(
@@ -133,14 +133,51 @@ def validate_real_data_fixture(path: Path) -> None:
             "This project intentionally does not generate fallback synthetic data."
         )
 
+    if path.suffix == ".ipynb":
+        _validate_notebook_fixture(path)
+        return
+
     with path.open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.DictReader(handle))
-    if not rows:
+        reader = csv.DictReader(handle)
+        first_row = next(reader, None)
+    if first_row is None:
         raise ValueError(f"Real-data fixture is empty: {path}")
-    required = {"date", "market_cap_usd", "volume_usd", "close_usd", "source"}
-    missing = required.difference(rows[0])
-    if missing:
-        raise ValueError(f"Real-data fixture {path} is missing columns: {sorted(missing)}")
+
+    schemas = [
+        {"date", "market_cap_usd", "volume_usd", "close_usd", "source"},
+        {
+            "ticker",
+            "date",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume",
+            "adj_close",
+        },
+        {"ticker", "exchange", "company_name"},
+    ]
+    columns = set(first_row)
+    if not any(required.issubset(columns) for required in schemas):
+        expected = sorted(set().union(*schemas))
+        raise ValueError(
+            f"Real-data fixture {path} has unsupported columns. "
+            f"Expected one known schema containing columns like: {expected}"
+        )
+
+
+def _validate_notebook_fixture(path: Path) -> None:
+    raw_notebook = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw_notebook, dict):
+        raise ValueError(f"Notebook fixture is malformed: {path}")
+    cells = raw_notebook.get("cells")
+    if not isinstance(cells, list) or not cells:
+        raise ValueError(f"Notebook fixture is empty: {path}")
+    has_source = any(
+        isinstance(cell, dict) and cell.get("source") for cell in cells
+    )
+    if not has_source:
+        raise ValueError(f"Notebook fixture has no cell source: {path}")
 
 
 def _load_annotations(
