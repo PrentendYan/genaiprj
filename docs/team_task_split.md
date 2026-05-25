@@ -6,9 +6,9 @@
 
 - DARF / CORAX 的主要 MCP 代码、skills、references、schemas 已经迁入项目。
 - 路径已经从个人机器路径改成可配置模式。
-- `single_llm_baseline`、`darf`、`corax` 三个 adapter 已经可以通过 CLI 跑。
-- 初始 benchmark 有 6 个 labeled cases 和一个 BTC 真实数据样例。
-- 本机已经验证 Codex Desktop bundled CLI 和 Claude CLI 可以调用模型。
+- `single_llm_baseline`、`darf`、`corax`、`corax-live`、`darf-live` 五个 adapter 已经可以通过 CLI 跑。
+- benchmark 有 45 个 labeled cases，包含 BTC 真实数据样例、QuoteMedia 股票样本和真实 notebook workflow artifacts。
+- 本机已经验证 Codex Desktop bundled CLI、DARF live challenger 和 Claude Sentinel summary wrapper 可以调用模型。
 - `CONFIGURATION.md` 已经记录 live agent 运行时需要使用 Codex Desktop bundled CLI。
 
 ## Part 1：Agent Review Pipeline
@@ -17,10 +17,10 @@
 
 主要任务：
 
-- 增加 `darf-live` adapter，调用 DARF `CodexBackend` 做真实 challenger review。
+- 继续维护 `darf-live` adapter，它已经调用 DARF `CodexBackend` 做真实 challenger review。
 - 维护并完善已经接入的 `corax-live` adapter，继续使用 CORAX `reviewer_run` 做真实 Codex Reviewer review。
-- 增加最小 Claude Sentinel wrapper，用 `claude -p` 做 claim check / meta-review；可以先只在最终 case summary 上跑，不必每个 case 都跑。
-- 在 CLI 中加入 `--adapter darf-live`，并继续维护已经加入的 `--adapter corax-live`。
+- 继续维护最小 Claude Sentinel wrapper，它已经可以用 `claude -p` 做 final summary claim check / meta-review。
+- 继续维护 `--adapter darf-live` 和 `--adapter corax-live`。
 - 模型必须能通过 `--model` 或 `QUANT_AUDIT_LIVE_MODEL` 覆盖，便宜模型用于 smoke test，更强模型用于最终 evaluation。
 - 把 raw model output、parsed JSON、latency、adapter name、model name、error 保存到 `.runtime/runs/<run_id>/`。
 - 处理 timeout、invalid JSON、Codex CLI 不可用、Claude 未登录、schema mismatch 等失败模式。
@@ -38,7 +38,7 @@
 最小完成标准：
 
 - `corax-live` 能真实调用 Codex CLI 并返回 structured verdict。
-- `darf-live` 至少能跑通一个 case，或者清楚记录为 stretch goal。
+- `darf-live` 能真实调用 Codex CLI 并返回 structured verdict。
 - CLI 能输出 live adapter 的 metrics，并保存每个 case 的 raw verdict。
 - CLI 能通过 `--limit` 或 `--case-id` 控制 live 调用次数，降低测试成本。
 - 失败时返回清楚错误，而不是静默 fallback 或生成假结果。
@@ -56,7 +56,7 @@
 主要任务：
 
 - 把 `expected_issues` 从 `benchmark_cases/cases.json` 拆到 `benchmark_cases/annotations.json`。
-- 把 case 数量扩到至少 20 个，理想目标是 25-30 个。
+- 当前已有 45 个 labeled cases；后续扩展重点是补更多真实 workflow 和更难的 failure cases。
 - 覆盖 clean case、obvious bug、subtle bug、ambiguous case、agent failure case。
 - 增加真实 finance workflow 类型，包括回测代码、研究结论、时间序列切分、全样本归一化、交易成本、unsupported claim。
 - 给每个 case 补充 `source_type`、`severity`、`rationale`。
@@ -75,7 +75,7 @@
 
 最小完成标准：
 
-- 至少 20 个 labeled cases。
+- 至少 45 个 labeled cases，并保持 annotations 与 cases 一一对应。
 - `python -m unittest discover -s tests` 通过。
 - 缺数据时明确报错，不自动生成假数据。
 - labels 和 cases 分离后，CLI 仍能正常计算 precision / recall / F1。
