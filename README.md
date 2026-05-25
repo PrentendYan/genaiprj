@@ -20,6 +20,12 @@ This project asks whether adversarial AI review can catch those finance-specific
 - DARF MCP server code, tests, portable configuration, skills, references, and command orchestration.
 - CORAX MCP server code, portable configuration, skills, references, schemas, and command orchestration.
 
+## How to Read This Repository
+
+Start with `site/index.html` for a quick visual summary, then read `reports/primary_report.md` for the main argument, evaluation table, case analysis, limitations, and future work roadmap. Use this `README.md` for reproduction commands. Use `PROJECT_STATUS.md` for the engineering status and remaining work. Use `docs/architecture.md` and `docs/local_darf_corax_map.md` when modifying the agent or MCP logic.
+
+The default runnable path is the offline benchmark. It should work immediately after cloning with Python 3.11+ and no model credentials. The live path is optional and requires local Codex/Claude CLI credentials; it is useful for demos and final evaluation, but it should not be required for a grader to inspect the repository.
+
 ## Repository Layout
 
 ```text
@@ -76,6 +82,14 @@ python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --ada
 ```
 
 The CLI prints per-case findings, raw adapter output, and precision / recall / F1. With no explicit `--adapter`, it runs `single_llm_baseline`, `darf`, and `corax`.
+
+Expected offline metrics:
+
+| Adapter | Precision | Recall | F1 |
+|---|---:|---:|---:|
+| `single_llm_baseline` | 1.0000 | 0.5556 | 0.7143 |
+| `darf` | 0.9459 | 0.9722 | 0.9589 |
+| `corax` | 0.9459 | 0.9722 | 0.9589 |
 
 `benchmark_cases/cases.json` stores audited artifacts. `benchmark_cases/annotations.json` stores human ground-truth labels, severity, and rationale. Adding a case requires adding a matching annotation. The loader fails clearly on missing labels, duplicate case IDs, unknown issue types, missing fixtures, and empty fixtures.
 
@@ -148,6 +162,10 @@ See `CONFIGURATION.md` for the complete environment notes.
 - CORAX MCP still needs a DARF-style test suite.
 - Lessons DB migration scripts and more detailed cost estimates remain follow-up work.
 - Live adapter artifacts capture raw output, latency, errors, and parsed verdicts, but schema validation and warning classification can be made stricter.
+
+## Next Development Pass
+
+The most useful next pass is to make the full agent workflow benchmarkable. Connect blind-brief stripping, Sentinel review, and mutation-ladder escalation into a single repeatable CLI path, then compare that full path against the current single-pass live adapters. In parallel, add a CORAX MCP test suite, refine ambiguous labels, improve live warning/error taxonomy, and add cost estimates for model calls.
 
 ## Do Not Commit
 

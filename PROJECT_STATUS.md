@@ -105,12 +105,28 @@ The offline `darf` and `corax` adapters are operationally identical on this case
 
 ## Remaining Work
 
-- Add a DARF-style test suite for CORAX MCP.
-- Extend Claude Sentinel from final-summary meta-review to phase-level gate integration.
-- Benchmark the full DARF/CORAX orchestration path, not only single-pass reviewer/challenger behavior.
-- Convert lessons DB migration into a project script.
-- Improve cost estimates, schema validation, and warning/error classification.
+### Full Agent Workflow
+
+- Connect blind-brief stripping, Sentinel review, and mutation-ladder escalation into one repeatable benchmark path.
+- Add a CLI option for the full orchestrated path while keeping the current offline default cheap and credential-free.
+- Compare the full path against `corax-live` and `darf-live` single-pass review.
+
+### CORAX MCP Tests
+
+- Add DARF-style tests for CORAX workspace initialization, producer wrapper, reviewer wrapper, Sentinel wrapper, mutation selection, mutation application, lessons DB integration, and failure handling.
+- Mock model calls so normal tests do not require live credentials or budget.
+
+### Benchmark and Labels
+
+- Revisit ambiguous labels, especially the boundary between lookahead and temporal-split leakage.
 - Add more real scripts, notebooks, and report excerpts beyond the current 45-case benchmark.
+- Keep clean near-miss cases so precision remains measurable.
+
+### Operations
+
+- Convert lessons DB migration into a project script.
+- Improve cost estimates, schema validation, warning classification, and retry taxonomy.
+- Keep live artifacts explicit about model, latency, raw output, parsed verdict, and error state.
 
 ## Configuration Files
 
