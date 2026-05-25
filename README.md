@@ -60,7 +60,7 @@ adapter 的含义：
 - `single_llm_baseline`：模拟普通单轮审查。
 - `darf`：运行离线 DARF adapter，调用 `integrations/darf_mcp` 里的 normalization MCP scan，并按 blind review 方式隐藏 label 字段。
 - `corax`：运行离线 CORAX adapter，调用 `integrations/corax_mcp` 里的 lookahead scan、normalization scan 和 blind brief stripper，并加入 Sentinel claim check。
-- `corax-live`：运行 live CORAX adapter，真实调用本机 Codex CLI reviewer，并保存 raw verdict、latency 和 error。
+- `corax-live`：运行 live CORAX adapter，真实调用本机 Codex CLI reviewer，并保存 raw verdict、latency 和 error。它本身只跑 Codex Reviewer；Claude Sentinel 通过 `--sentinel-summary` 作为 summary-level meta-review 可选运行。
 - `darf-live`：运行 live DARF adapter，调用 DARF `CodexBackend` 做 blind challenger review，并保存 raw verdict、latency、backend metrics 和 error。
 - `--sentinel-summary`：可选运行一次 Claude Sentinel meta-review，对最终 evaluation summary 做 claim check / groupthink check，并保存 `sentinel-summary.json`。
 
