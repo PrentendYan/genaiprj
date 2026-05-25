@@ -2,7 +2,6 @@
 """CORAX Lessons module — shared DB access with source_framework='corax'."""
 
 import json
-import pathlib
 from typing import Any
 
 try:

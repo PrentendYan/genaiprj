@@ -1,5 +1,8 @@
 {
-  "root": ".",
   "pythonVersion": "3.13",
-  "extraPaths": ["."]
+  "typeCheckingMode": "basic",
+  "extraPaths": [".", "../.."],
+  "exclude": ["tests", ".pytest_cache", "darf_mcp.egg-info"],
+  "reportMissingImports": false,
+  "reportMissingModuleSource": false
 }

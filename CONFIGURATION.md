@@ -1,51 +1,51 @@
-# 配置说明
+# Configuration
 
-项目内已经包含 DARF / CORAX 的主要 MCP 代码和 skill 文档。个人机器路径没有写死在代码里，运行时路径通过环境变量配置。
+The repository contains the main DARF/CORAX MCP code and skill documentation. Personal machine paths are not hard-coded in the codebase. Runtime locations are controlled by environment variables and default to local project paths.
 
-## 默认目录
+## Default Directories
 
-- DARF runtime：`.runtime/darf`
-- CORAX runtime：`.runtime/corax`
-- 共享 lessons DB：`.runtime/shared/darf-lessons.db`
-- DARF skill：`skills/darf`
-- CORAX skill：`skills/corax`
+- DARF runtime: `.runtime/darf`
+- CORAX runtime: `.runtime/corax`
+- Shared lessons DB: `.runtime/shared/darf-lessons.db`
+- DARF skill: `skills/darf`
+- CORAX skill: `skills/corax`
 
-`.runtime/` 是运行时目录，不应该提交到仓库。
+`.runtime/` is a runtime-output area. Do not commit new local runtime files unless they are intentionally curated evaluation evidence.
 
-## DARF 环境变量
+## DARF Environment Variables
 
-- `DARF_PROJECT_ROOT`：项目根目录，默认自动识别为 `genaiprj/`。
-- `DARF_DATA_DIR`：DARF DB、jobs、logs 的目录。
-- `DARF_DB_PATH`：DARF SQLite DB 路径。
-- `DARF_JOBS_DIR`：DARF 后台 review job 存储目录。
-- `DARF_LOG_DIR`：DARF 日志目录。
-- `DARF_DEBUG_LOG_PATH`：Codex challenger debug log 路径。
-- `DARF_SKILL_DIR`：DARF skill 目录。
-- `DARF_CHALLENGER_PROMPT_PATH`：Codex challenger prompt 模板路径。
+- `DARF_PROJECT_ROOT`: project root. Defaults to auto-detecting `genaiprj/`.
+- `DARF_DATA_DIR`: DARF DB, jobs, and logs directory.
+- `DARF_DB_PATH`: DARF SQLite DB path.
+- `DARF_JOBS_DIR`: DARF background review job directory.
+- `DARF_LOG_DIR`: DARF log directory.
+- `DARF_DEBUG_LOG_PATH`: Codex challenger debug log path.
+- `DARF_SKILL_DIR`: DARF skill directory.
+- `DARF_CHALLENGER_PROMPT_PATH`: Codex challenger prompt template path.
 
-## CORAX 环境变量
+## CORAX Environment Variables
 
-- `CORAX_PROJECT_ROOT`：项目根目录，默认自动识别为 `genaiprj/`。
-- `CORAX_DATA_DIR`：CORAX DB、cost、flat lessons 的目录。
-- `CORAX_COST_DB_PATH`：CORAX cost SQLite DB 路径。
-- `CORAX_SKILL_DIR`：CORAX skill 目录。
-- `CORAX_REFERENCES_DIR`：CORAX references 目录。
-- `CORAX_DEFAULT_CONFIG_PATH`：CORAX default config JSON 路径。
-- `CORAX_LESSONS_DB_PATH`：CORAX lessons DB 路径。
-- `CORAX_LESSONS_FLAT_DIR`：CORAX flat lessons 输出目录。
+- `CORAX_PROJECT_ROOT`: project root. Defaults to auto-detecting `genaiprj/`.
+- `CORAX_DATA_DIR`: CORAX DB, cost, and flat-lessons directory.
+- `CORAX_COST_DB_PATH`: CORAX cost SQLite DB path.
+- `CORAX_SKILL_DIR`: CORAX skill directory.
+- `CORAX_REFERENCES_DIR`: CORAX references directory.
+- `CORAX_DEFAULT_CONFIG_PATH`: CORAX default config JSON path.
+- `CORAX_LESSONS_DB_PATH`: CORAX lessons DB path.
+- `CORAX_LESSONS_FLAT_DIR`: CORAX flat lessons output directory.
 
-## 基础运行
+## Offline Run
 
 ```bash
 python -m unittest discover -s tests
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
 ```
 
-## 本机 Codex / Claude CLI
+The offline benchmark and offline adapters do not require Codex CLI or Claude CLI.
 
-基础 benchmark 和离线 adapter 不需要 Codex / Claude CLI。只有后续运行 live DARF challenger、live CORAX reviewer、Claude Sentinel 这类 agent 调用时，才需要本机 CLI。
+## Local Codex and Claude CLI
 
-当前本机验证过的可用方式：
+Live DARF, live CORAX, and Claude Sentinel runs require local CLI access and valid credentials. The development machine was validated with the Codex Desktop bundled CLI:
 
 ```bash
 export PATH="/Applications/Codex.app/Contents/Resources:$PATH"
@@ -57,17 +57,19 @@ python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --ada
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-live --model gpt-5.4-mini --limit 3 --sentinel-summary
 ```
 
-`/Users/<user>/.npm-global/bin/codex` 这个 npm global 入口在当前机器上不完整，缺少 native Codex binary。运行项目里的 live Codex wrapper 时，应优先使用 Codex Desktop bundled CLI：`/Applications/Codex.app/Contents/Resources/codex`。最简单做法是把 `/Applications/Codex.app/Contents/Resources` 放到 `PATH` 最前面。
+The npm-global `codex` entry at `/Users/<user>/.npm-global/bin/codex` was incomplete on the development machine because it lacked the native Codex binary. Prefer `/Applications/Codex.app/Contents/Resources/codex` when using Codex Desktop.
 
-Live adapter 的模型不要写死。临时测试可以传 `--model gpt-5.4-mini`，最终评估可以传更强模型；也可以用 `QUANT_AUDIT_LIVE_MODEL` 设置默认模型。用 `--limit` 或 `--case-id` 可以控制调用次数和成本。每个 live case 会保存到 `.runtime/runs/<run_id>/<adapter>/<case_id>.json`；一次 CLI evaluation 的汇总结果会保存到 `.runtime/runs/<run_id>/results.json`。
+Live adapter models are configurable by design. Use `--model gpt-5.4-mini` for low-cost smoke tests and pass a stronger model for final evaluation. `QUANT_AUDIT_LIVE_MODEL` can set the default model. Use `--limit` or `--case-id` to control cost and runtime.
 
-当前 live adapter 失败时会在输出和 artifact 中写入 `error` 字段。已覆盖的失败模式包括 Codex CLI 不可用、subprocess timeout / spawn failure、invalid JSON 或 schema mismatch。失败不会生成假 verdict，也不会静默 fallback 成离线结果。
+Each live case is saved to `.runtime/runs/<run_id>/<adapter>/<case_id>.json`. Aggregate CLI output is saved to `.runtime/runs/<run_id>/results.json`.
 
-`--sentinel-summary` 会额外调用一次 `claude -p`，对最终 evaluation summary 做 CORAX Sentinel meta-review。Sentinel artifact 写到 `.runtime/runs/<run_id>/sentinel-summary.json`，包含 raw output、parsed JSON、latency、model 和 error。
+Live adapter failures are written to the output and artifact `error` field. Covered failure modes include missing Codex CLI, subprocess timeout, spawn failure, invalid JSON, and schema mismatch. The live adapters do not silently fall back to offline results.
 
-Claude CLI 在 sandbox 里可能看不到本机登录态。确认 Claude 是否可用时，以本机环境中的 `claude auth status` 为准；当前已验证 `authMethod` 为 `claude.ai` 时，`claude -p` 可以正常返回模型输出。Sentinel 模型可用 `--sentinel-model` 或 `QUANT_AUDIT_SENTINEL_MODEL` 指定；不指定时使用 Claude CLI 默认模型。
+`--sentinel-summary` calls `claude -p` once after the evaluation summary is available. It saves `sentinel-summary.json` with raw output, parsed JSON, latency, model, and error fields.
 
-## DARF MCP 测试
+Claude CLI may not see local login state inside a sandbox. When checking whether Claude is available, use `claude auth status` in the local shell. The development machine was validated with `authMethod` set to `claude.ai`. Set the Sentinel model with `--sentinel-model` or `QUANT_AUDIT_SENTINEL_MODEL`; otherwise the Claude CLI default model is used.
+
+## DARF MCP Tests
 
 ```bash
 python -m pip install -r requirements.txt
@@ -75,6 +77,6 @@ cd integrations/darf_mcp
 python -m pytest tests
 ```
 
-## 注意
+## Notes
 
-运行完整 agent 逻辑建议使用 Python 3.13，并需要本机配置可用的 Codex Desktop bundled CLI、Claude CLI 和对应模型/API 权限。项目不会提交 API key、个人 `.env`、本地日志或 SQLite runtime DB。
+Full agent workflows are best run with Python 3.13 plus working Codex Desktop CLI, Claude CLI, and the required model/API permissions. The repository should not contain API keys, personal `.env` files, local logs, or local SQLite runtime databases.

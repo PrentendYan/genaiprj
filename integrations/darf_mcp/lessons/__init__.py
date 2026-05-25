@@ -182,7 +182,7 @@ def build_tools() -> list[dict[str, Any]]:
 
 def _find_next_rule_number(content: str) -> int:
     """Find the next rule number in the dynamic rules section of CLAUDE.md."""
-    matches = re.findall(r"### 规则 (\d+)：", content)
+    matches = re.findall(r"### Rule (\d+):", content)
     if not matches:
         return 1
     return max(int(m) for m in matches) + 1
@@ -191,10 +191,10 @@ def _find_next_rule_number(content: str) -> int:
 def _format_claude_md_rule(lesson: dict[str, Any], rule_num: int) -> str:
     """Format a lesson as a CLAUDE.md dynamic rule block."""
     return (
-        f"\n### 规则 {rule_num}：{lesson['title']}\n"
-        f"- 触发场景：{lesson['trigger_scenario']}\n"
-        f"- 正确做法：{lesson['correct']}\n"
-        f"- 错误示例：{lesson['wrong']}\n"
+        f"\n### Rule {rule_num}: {lesson['title']}\n"
+        f"- Trigger scenario: {lesson['trigger_scenario']}\n"
+        f"- Correct behavior: {lesson['correct']}\n"
+        f"- Wrong example: {lesson['wrong']}\n"
     )
 
 

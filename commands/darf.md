@@ -5,209 +5,197 @@ argument-hint: "[--auto] [phase] [task-description]"
 
 # DARF
 
-Claude+Codex 双模型对抗量化研究。Task: $ARGUMENTS
+DARF is a dual-model adversarial research workflow for quantitative finance. Task: $ARGUMENTS
 
 ## Pre-Step 0: Mode Selection
 
-无 `--auto` 时用 AskUserQuestion 问: A.交互模式(每阶段确认,分歧问用户) B.全自动(静默,分类裁决,仅异常通知)。有 `--auto` 则跳过。
+If `--auto` is absent, ask the user to choose interactive mode or full auto mode. Interactive mode confirms each phase and asks about disagreements. Auto mode proceeds silently, classifies issues, and notifies only on exceptions. If `--auto` is present, skip the question.
 
 ## Pre-Step 1: Parse Inputs
 
-解析: auto_mode(bool), phase(可选单阶段), task(描述), inline config(Goal/Max-Fix-Rounds/Fallback-Claude-Limit)。
+Parse `auto_mode`, optional phase, task description, and inline configuration such as `Goal`, `Max-Fix-Rounds`, and `Fallback-Claude-Limit`.
 
-## Step 0: Goal Clarity Check (BLOCKING)
+## Step 0: Goal Clarity Check (Blocking)
 
-| 维度 | 分值 | ≥7 标准 |
-|------|------|---------|
-| 目标清晰度 | 0-3 | 可量化成功标准 |
-| 预期产出 | 0-3 | 交付物类型明确 |
-| 范围边界 | 0-2 | 数据/时间/资产 |
-| 约束条件 | 0-2 | 成本/依赖/技术栈 |
+| Dimension | Score | Standard for full credit |
+|---|---:|---|
+| Goal clarity | 0-3 | Quantifiable success criteria |
+| Expected output | 0-3 | Clear deliverable type |
+| Scope boundary | 0-2 | Data, time period, and asset scope |
+| Constraints | 0-2 | Cost, dependency, and stack constraints |
 
-≥7 继续 | 4-6 AskUserQuestion 补充 | <4 停止。auto 下目标不清仍必须问。
+Score `>= 7`: continue. Score `4-6`: ask for clarification. Score `< 4`: stop. Auto mode must still ask if the goal is unclear.
 
-## Step 0.5: Init Workspace
+## Step 0.5: Initialize Workspace
 
 ```bash
 mkdir -p darf-workspace/phase-{1-research,2-design,3-implement,4-validate,5-report}
 ```
 
-创建 config.json(task/goal_score/auto_mode/params{max_fix_rounds:3,fallback_claude_limit:1,disagree_strategy:classify,codex_calls:0,fallback_calls:0}/phases/groupthink_monitor) 和 execution-log.md。
+Create `config.json` with task, goal score, auto mode, parameters, phase list, and groupthink monitor state. Create `execution-log.md`.
 
-**创建 STATE.md**（见 [state-template.md](../skills/darf/references/state-template.md)）:
-填入 Task、Goal score、Mode、所有 Phase 为 pending、Session Continuity 为当前时间。
-后续每个 Step/Gate/Phase 切换时更新对应字段。Session 结束前更新 Resume 字段。
+Create `STATE.md` from `skills/darf/references/state-template.md`. Fill in task, goal score, mode, phase status, and session-continuity fields. Update it after each phase transition, gate, fix cycle, and session pause.
 
-初始化成本追踪: `track_cost(phase="init", action="workspace_setup", input_tokens=0, output_tokens=0, model="claude-opus")`
+Initialize cost tracking with an `init` event.
 
-## Step 0.7: Auto Task Classification (BLOCKING, 硬规则)
+## Step 0.7: Auto Task Classification (Blocking)
 
-决定 phase 数（3 vs 5）和默认 gate 级别。规则按序评估，命中即停。
+Classify the task before selecting the phase set and default gate level.
 
-**Rule A - 强制 full 5-phase + 全 full-gate**（高风险，任一命中即强制）:
-- task 含: 新策略 / 新因子体系 / 核心算法 / 数据源切换 / pipeline 重构 / 生产部署 / 跨资产类 / 换 target variable
-- Phase 3 预计新建文件 ≥5 个或总改动 ≥500 行
+Rule A: force full 5-phase strict mode when the task involves a new strategy, new factor system, core algorithm, data-source switch, pipeline refactor, production deployment, cross-asset expansion, target-variable change, five or more new files, or roughly 500 or more changed lines.
 
-**Rule B - Phase Shortcut (3-phase: Design→Implement→Validate)**（低风险小改，全部满足即启用）:
-1. goal_score ≥ 8
-2. task 含以下关键词之一: 追加 / 增量 / 微调 / 参数 / 小改 / 局部 / 调整 / 文档 / 注释 / 日志 / 重命名 / typo
-3. task 不含 Rule A 任意关键词
-4. Phase 3 预计改动 ≤3 文件 或 ≤200 行
+Rule B: allow the 3-phase shortcut (`Design -> Implement -> Validate`) only when the goal score is at least 8, the task is local or incremental, Rule A does not match, and the implementation is expected to touch at most three files or about 200 lines.
 
-**Rule C - 默认**（Rule A/B 都未命中）:
-- 跑完整 5 phase
-- 每 phase 通过 `suggest_review_level` 自动决定 lite/full
+Rule C: otherwise run the full five phases and let `suggest_review_level` choose `lite`, `full`, or `skip` for each phase.
 
-**输出**: 写入 `config.json.classification = {"mode": "full-strict"|"shortcut"|"default", "reason": "<命中规则>", "phases": [1,2,3,4,5]|[2,3,4]}`
-
-⚠️ auto 模式下完全自动判定，不问用户。交互模式下若命中 Rule B 询问一次确认。
+Write the classification to `config.json.classification` with `mode`, `reason`, and `phases`.
 
 ## Step 0.8: Pre-Phase Intelligence
 
-每个 phase 开始前必须执行（不是 should，是 MUST）:
+Before every phase:
 
-1. **调用 `suggest_review_level(phase=当前阶段)`**，读取返回的 `level` 字段:
-   - `level="lite"` → 本 phase 跳过 Step 4（challenger），Step 4.5 + Step 5 照跑
-   - `level="full"` → 本 phase 跑完整 Step 3→4→5
-   - `level="skip"` → 本 phase 仅 schema 校验，跳过 Step 3-5
-   - Rule A 强制模式下忽略返回，始终 full
-
-2. **调用 `search_lessons(query=<阶段关键词>)`**，返回的 top-3 lesson 注入 blind-brief 作为提醒
-
-3. 将决定记录到 STATE.md: `phase_<N>_gate_level: <level>, reason: <suggest_review_level 返回的 rationale>`
+1. Call `suggest_review_level(phase=<current phase>)`.
+2. If `level="lite"`, skip adversarial challenger review but still run auto-validation and gate evaluation.
+3. If `level="full"`, run the full review path.
+4. If `level="skip"`, run schema validation only.
+5. If Rule A forced strict mode, ignore the suggestion and run full review.
+6. Call `search_lessons(query=<phase keywords>)` and inject the top lessons into the blind brief.
+7. Record the chosen level and rationale in `STATE.md`.
 
 ## Step 1: Execute Phase
 
-Phase 1-Research: deep-research, hypothesis-generation, quant-research-agent | Phase 2-Design: experiment-design | **Phase 3-Implement: GSD-Enhanced (见 Step 1.5)** | Phase 4-Validate: quant-backtesting, statistical-analysis | Phase 5-Report: quant-research-report
+Phase roles:
 
-Phase 1 skill 选择: 纯学术文献综述 -> deep-research | 实用方法调研 -> quant-research-agent | 因子假设生成 -> hypothesis-generation。可串行组合。
+- Phase 1 Research: literature review, practical method search, or hypothesis generation.
+- Phase 2 Design: experiment design, temporal split plan, baselines, metrics, and data plan.
+- Phase 3 Implement: use the GSD-enhanced implementation path in Step 1.5.
+- Phase 4 Validate: backtesting, statistical analysis, robustness checks.
+- Phase 5 Report: final research report and reproduction notes.
 
-输出到 `darf-workspace/phase-{N}-{name}/claude-output.md`，追加 execution-log。
+Write phase output to `darf-workspace/phase-{N}-{name}/claude-output.md` and append to `execution-log.md`.
 
-## Step 1.5: GSD-Enhanced Implement (Phase 3 ONLY)
+## Step 1.5: GSD-Enhanced Implement (Phase 3 Only)
 
-仅当当前阶段为 Phase 3 时执行此步骤，其他 Phase 跳过。
+Run this step only during Phase 3.
 
-**1.5a Plan Decomposition:**
-读取 Phase 2 产出 (`darf-workspace/phase-2-design/claude-output.md`)，将实现任务拆为 2-3 个独立 Plan。
-每个 Plan 遵循 [implementation-plan-template.md](../skills/darf/references/implementation-plan-template.md)。
-记录 Plans 到 `darf-workspace/phase-3-implement/plans.md`。
+Plan decomposition:
 
-**1.5b Subagent Execution:**
-对每个 Plan 启动独立 Agent:
-```
-Agent(general-purpose, model=opus):
-  "DARF Phase 3 实现执行者。
-   Plan: {plan_yaml}
-   设计文档: {读取 phase-2 claude-output.md 的关键段落}
-   量化规则: 无前视偏差、时序切分、point-in-time、文件隔离
-   输出到: darf-workspace/phase-3-implement/
-   完成后返回: 改了什么文件 + 测试结果摘要"
-```
-无依赖的 Plan 可并行启动。
+- Read `darf-workspace/phase-2-design/claude-output.md`.
+- Split implementation into two or three independent plans.
+- Follow `skills/darf/references/implementation-plan-template.md`.
+- Save plans to `darf-workspace/phase-3-implement/plans.md`.
 
-**1.5c 4-Level Verification:**
-全部 Plan 完成后调用:
-```
-verify_implementation(files=[所有新建/修改的 .py 文件], workspace_dir=项目根目录)
-```
-判定规则见 [verification-levels.md](../skills/darf/references/verification-levels.md)。
-L1/L2 FAIL → 修复后重验（最多 2 轮）。L3/L4 FAIL → 记录 WARNING。
+Subagent execution:
 
-**1.5d 合并产出:**
-将各 Plan 的执行摘要 + 验证结果合并写入 `darf-workspace/phase-3-implement/claude-output.md`。
-继续原流程 Step 2 (Blind Brief)。
+- Launch an independent implementation agent for each plan.
+- Include the plan YAML, key Phase 2 design sections, and quant rules in the prompt.
+- Enforce no lookahead, chronological splits, point-in-time data, and file isolation.
+- Independent plans may run in parallel.
+
+Four-level verification:
+
+- Call `verify_implementation(files=<changed python files>, workspace_dir=<project root>)`.
+- Use `skills/darf/references/verification-levels.md`.
+- L1/L2 failures block and require fixes for up to two rounds.
+- L3/L4 failures are recorded as warnings in this DARF command profile.
+
+Merge output:
+
+- Combine plan summaries and verification results into `darf-workspace/phase-3-implement/claude-output.md`.
+- Continue to blind brief generation.
 
 ## Step 2: Generate Blind Brief
 
-从 claude-output.md 生成 blind-brief.md。遵循 blind-brief-template.md: 保留事实(数据/代码/统计), 剥离判断(我认为/建议/显著/最佳)。自查关键词。
+Generate `blind-brief.md` from `claude-output.md`. Follow `blind-brief-template.md`: keep facts, code, data, and metrics; strip recommendations, confidence framing, and conclusion language.
 
 ## Step 3: Claude Self-Review
 
-生成 claude-self-review.json (verdict/checks/critical_issues/self_doubt)。
+Generate `claude-self-review.json` with verdict, checks, critical issues, and self-doubt notes.
 
 ## Step 4: Invoke Challenger
 
-**Lite-gate 跳过规则**：Step 0.8 返回 `{"level": "lite"}` 时，跳过 4a/4b，直接 Step 4.5（auto-validation）+ Step 5（evaluate）。lite 仅做 schema + 前视偏差扫描，不做对抗审查。适用：追加因子/微调参数/文档修改/低风险重构。Full-gate 适用：核心算法/新策略/生产部署/数据管道改动。
+If the review level is `lite`, skip adversarial challenger review and continue to auto-validation and gate evaluation.
 
-**4a MCP Tool 调用:**
+Otherwise call:
+
+```text
+review_blind_brief(
+  brief=<blind brief>,
+  rubric=<phase criteria from gate protocol>,
+  phase=<current phase>
+)
 ```
-review_blind_brief(brief=blind-brief内容, rubric=gate-protocol对应phase的criteria, phase=当前阶段)
-```
-返回结构化 Verdict JSON → codex_calls++, Step 5。
 
-**4b Fallback 处理:**
-如果返回 `fallback_type: "claude_agent"`:
-- 读取 `prompt_file` 路径内容
-- Agent(general-purpose) 独立 Challenger, fallback_calls++
-- fallback_calls >= fallback_claude_limit * total_phases → 跳过审查, Claude 单方 verdict
-- 连续 2 phase fallback → 警告用户检查 Codex API
+If the MCP backend returns `fallback_type: "claude_agent"`, run one independent fallback challenger if the fallback budget allows. If repeated fallback happens, warn the user to inspect Codex/API availability. Do not hide challenger unavailability.
 
-## Step 4.5: Auto-Validation (Phase 3 Implement)
+## Step 4.5: Auto-Validation
 
-Phase 3 时，Gate 前自动运行数据校验 MCP tools:
-1. `validate_no_lookahead(feature_file, label_file, date_col, shift)` — 如果有特征/标签文件
-2. `check_normalization_scope(code_file)` — 扫描实现代码
-3. `check_temporal_split(train_end, val_start, val_end, test_start)` — 如果有数据切分
-结果作为自动化证据注入 blind-brief，Challenger 审查时可参考。
+During Phase 3, run relevant automated checks before the gate:
+
+- `validate_no_lookahead`
+- `check_normalization_scope`
+- `check_temporal_split`
+
+Inject the results into the review evidence.
 
 ## Step 5: Evaluate Gate
 
-**交互模式:** BOTH PASS→继续 | FAIL→fix cycle(max 3)→ESCALATE 给用户
+Interactive mode:
 
-**全自动模式:**
-```
-BOTH PASS → 静默继续
-ANY FAIL, iteration <= max_fix_rounds:
-  分类裁决 each issue:
-    bug(shift/lag/NaN/lookahead/边界/泄漏/除零/pct_change) → MUST FIX
-    design(artifact/架构/命名/拆分/schema/convention) → LOG, CONTINUE
-    test(test/coverage/pytest/edge case) → LOG, DON'T BLOCK
-  有 bug → 修复后 fresh review | 无 bug → auto-proceed
-iteration > max_fix_rounds → auto-override + WARNING
-```
+- Both PASS: advance.
+- Any FAIL: run a fix cycle up to the configured maximum, then escalate.
+
+Auto mode:
+
+- Both PASS: advance silently.
+- Any FAIL within the fix budget: classify each issue.
+- Bug issues such as wrong shift, lookahead, leakage, division by zero, NaN handling, or boundary errors must be fixed.
+- Design issues are logged and may continue.
+- Test-only issues are logged and do not block unless they reveal a bug.
+- Exceeded fix budget becomes an auto override with a warning.
 
 ## Step 5.5: Lesson Extraction
 
-Gate 中发现 issues（ANY FAIL 或 fix cycle）时触发。详见 [Lesson Extraction](../skills/darf/references/lesson-extraction.md)。
+When the gate finds issues or triggers a fix cycle:
 
-对 gate 产出的每个 critical_issue / counter_argument / fix record：
-1. **验证**：可复现（有 file:line 证据）+ 非偶发 + 可泛化为规则？三条全满足继续，否则跳过
-2. **写入 DB**：`add_lesson(title, domain, trigger, correct, wrong, evidence, source_phase)` 写入 Lesson 知识库
-3. **已知问题匹配**：`search_lessons(issue关键词)` 查找是否已有记录 → 有则 `bump_lesson(id)` 增加频次
-4. **execution-log**：记录 `[LESSON] id=N: <摘要>` 或 `[LESSON-BUMP] id=N freq=M`
-5. **auto 模式**：静默写入 DB；交互模式展示提取结果供用户确认
-6. **注意**：不再直接写平文件，由 Step 7 的 `sync_to_files()` 统一处理高频 lesson
+1. Validate that the issue is reproducible, non-incidental, and generalizable.
+2. Add a lesson to the lessons DB with title, domain, trigger, correct behavior, wrong behavior, evidence, and source phase.
+3. Search for similar existing lessons and bump frequency when found.
+4. Log the extracted or bumped lesson.
+5. In auto mode, write lessons silently. In interactive mode, show the extracted lesson for user confirmation.
+6. Sync frequent lessons to flat files through the normal sync path instead of writing ad hoc files.
 
-## Step 6: Groupthink Check (≥3 阶段后)
+## Step 6: Groupthink Check
 
-全阶段首轮双通过 → ⚠️ GROUPTHINK。80%+ 无 counter_arguments → ⚠️ CHALLENGER_INEFFECTIVE。
+After at least three phases:
 
-## Step 7: Advance/Complete
+- If every first-round gate passes, flag possible groupthink.
+- If at least 80% of reviews have no counterarguments, flag challenger ineffectiveness.
 
-交互: AskUserQuestion 确认继续。auto: 静默推进。
+## Step 7: Advance or Complete
 
-最后阶段完成时:
-1. `get_cost_report()` → 输出到 execution-log.md
-2. `sync_to_files()` → 将高频 lesson (freq≥3) 同步到平文件
-3. 输出完成摘要(任务/模式/耗时/阶段/Codex调用/修复bug/跳过issues/成本)。详见 execution-log.md。
+Interactive mode asks before advancing. Auto mode advances silently.
+
+At completion:
+
+1. Generate the cost report.
+2. Sync high-frequency lessons to files.
+3. Output a completion summary covering task, mode, duration, phases, Codex calls, fixed bugs, skipped issues, and cost.
 
 ## Rules
 
-1. Goal Check 是 BLOCKING，auto 也不跳过
-2. Phase 顺序不跳（除非单阶段指定或启用 shortcut）
-3. Challenger 无文件写权限
-4. Auto 分类裁决: bug→修, design→记录继续, test→不block
-5. Claude fallback 每 phase 最多 1 次
-6. execution-log.md 持续更新
-7. 遵守量化准则: 无前视偏差、时序切分、point-in-time、隔离
+1. Goal clarity is blocking, including in auto mode.
+2. Do not skip phase order unless a single phase or shortcut mode was explicitly selected.
+3. The challenger has no write permission.
+4. Auto issue classification is bug -> fix, design -> log and continue, test -> log unless it proves a bug.
+5. Claude fallback is limited per phase.
+6. Keep `execution-log.md` updated.
+7. Follow quant research constraints: no lookahead, chronological splits, point-in-time data, and isolated outputs.
 
-## Task Classification 参考
+## Task Classification Summary
 
-完整分类逻辑见 **Step 0.7**。简表：
-
-| 模式 | Phase 数 | Gate 策略 | 触发 |
-|------|---------|----------|------|
-| full-strict | 5 | 全 full-gate | Rule A（新策略/核心算法/≥5 新文件） |
-| default | 5 | suggest_review_level 决定 | Rule A/B 都不命中 |
-| shortcut | 3 (2→3→4) | suggest_review_level 决定 | Rule B（追加/微调/局部，≤3 文件） |
+| Mode | Phase count | Gate strategy | Trigger |
+|---|---:|---|---|
+| `full-strict` | 5 | Full gate for every phase | Rule A high-risk task |
+| `default` | 5 | Suggested per phase | Neither Rule A nor Rule B |
+| `shortcut` | 3 | Suggested per phase | Rule B low-risk local task |

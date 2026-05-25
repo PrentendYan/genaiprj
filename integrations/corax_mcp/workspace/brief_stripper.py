@@ -19,16 +19,18 @@ _CONCLUSION_EN = re.compile(
     re.IGNORECASE,
 )
 _CONCLUSION_CN = re.compile(
-    r"(因此|所以|从而|综上|综合来看"
-    r"|证明|表明|说明|证实|验证"
-    r"|显著|大幅|明显优于|超过|击败"
-    r"|最佳|最优|突破性|创新)"
+    r"(\u56e0\u6b64|\u6240\u4ee5|\u4ece\u800c|\u7efc\u4e0a|\u7efc\u5408\u6765\u770b"
+    r"|\u8bc1\u660e|\u8868\u660e|\u8bf4\u660e|\u8bc1\u5b9e|\u9a8c\u8bc1"
+    r"|\u663e\u8457|\u5927\u5e45|\u660e\u663e\u4f18\u4e8e|\u8d85\u8fc7|\u51fb\u8d25"
+    r"|\u6700\u4f73|\u6700\u4f18|\u7a81\u7834\u6027|\u521b\u65b0)"
 )
 _SUBJECTIVE_EN = re.compile(
     r"\bI (think|believe)\b|\bseems\b|\barguably\b|\bin my opinion\b",
     re.IGNORECASE,
 )
-_SUBJECTIVE_CN = re.compile(r"(我认为|我相信|看起来)")
+_SUBJECTIVE_CN = re.compile(
+    r"(\u6211\u8ba4\u4e3a|\u6211\u76f8\u4fe1|\u770b\u8d77\u6765)"
+)
 
 # Code block pattern (multi-line)
 _CODE_BLOCK = re.compile(r"```[\s\S]*?```")

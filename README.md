@@ -1,74 +1,72 @@
 # DARF/CORAX Quant Audit
 
-本项目把 DARF / CORAX 的对抗式 AI 审查机制整理成一个可运行、可继续开发的量化研究审查框架。它现在包含两层内容：一层是可直接运行的 benchmark 和 adapter，另一层是已经搬进项目并做过路径参数化的 DARF / CORAX MCP 与 skill 逻辑。
+This repository packages DARF and CORAX into a runnable quantitative-finance audit benchmark. It contains two layers: a reproducible benchmark harness with reviewer adapters, and the local DARF/CORAX MCP, skill, schema, and command logic that can be extended into a fuller agent workflow.
 
-## 项目目标
+## Project Goal
 
-量化研究和回测很容易被一些细节污染，比如前视偏差、特征和标签错位、全样本归一化、随机切分时间序列、缺少交易成本、以及没有证据支撑的策略收益结论。
+Quant research and backtests are fragile. A single wrong shift, full-sample normalization step, random split on time-indexed observations, omitted transaction cost, or unsupported performance claim can turn an invalid strategy into a persuasive-looking result.
 
-这个项目想做的是：把 AI agent 用在量化研究审查上，让它像 research auditor 一样检查策略代码、回测报告和研究结论，并且用 benchmark case 衡量它到底抓住了多少问题。
+This project asks whether adversarial AI review can catch those finance-specific research failures. The benchmark treats an AI reviewer like a research auditor: it reads code snippets, workflow artifacts, and research claims, then reports whether it found known methodological issues.
 
-## 当前已经有的内容
+## What Is Included
 
-- 一个可以直接运行的 benchmark harness。
-- 五个 reviewer adapter：`single_llm_baseline`、`darf`、`corax`、`corax-live`、`darf-live`。
-- 45 个 labeled benchmark cases，覆盖 lookahead、normalization leakage、temporal split、missing costs、unsupported claim 和 clean cases。
-- 一个小型 BTC 真实数据样例、一个 QuoteMedia 股票样本和两个真实 notebook workflow artifacts，避免项目变成纯 synthetic demo。
-- cases 和 ground-truth annotations 已拆分，方便扩展真实数据源和人工复核标签。
-- live adapter 支持 `--model`、`--limit`、`--case-id`，并保存 per-case artifact 和 aggregate `results.json`。
-- 最小 Claude Sentinel summary wrapper，可用 `--sentinel-summary` 对最终 evaluation summary 做 meta-review。
-- DARF MCP server 代码、测试和 portable config。
-- CORAX MCP server 代码和 portable config。
-- DARF / CORAX skills、references、schemas。
-- DARF / CORAX command orchestration 文档，包含 phase loop、gate、fix cycle、mutation 等流程。
+- A runnable benchmark harness.
+- Five reviewer adapters: `single_llm_baseline`, `darf`, `corax`, `corax-live`, and `darf-live`.
+- 45 labeled benchmark cases covering lookahead, normalization leakage, temporal split errors, missing costs, unsupported claims, and clean controls.
+- Real-data and real-workflow coverage: a small BTC market sample, a QuoteMedia stock sample, and two tutorial-notebook workflow artifacts.
+- Split benchmark artifacts and ground-truth annotations in `cases.json` and `annotations.json`.
+- Live adapter controls for `--model`, `--limit`, and `--case-id`, with per-case artifacts and aggregate `results.json` outputs.
+- A minimal Claude Sentinel summary wrapper available through `--sentinel-summary`.
+- DARF MCP server code, tests, portable configuration, skills, references, and command orchestration.
+- CORAX MCP server code, portable configuration, skills, references, schemas, and command orchestration.
 
-## 目录结构
+## Repository Layout
 
 ```text
 genaiprj/
-  benchmark_cases/          # benchmark case artifacts 和 annotations
-  commands/                 # DARF / CORAX command 编排说明
-  data/                     # 小型真实数据样例
-  docs/                     # 架构说明、代码索引和 case coverage summary
+  benchmark_cases/          # benchmark artifacts and annotations
+  commands/                 # DARF/CORAX command orchestration notes
+  data/                     # small real-data fixtures and notebook artifacts
+  docs/                     # architecture notes, handoff notes, coverage summaries
   integrations/
-    darf_mcp/               # DARF MCP server 代码和测试
-    corax_mcp/              # CORAX MCP server 代码
-  reports/                  # 早期报告草稿
-  site/                     # 早期静态页面草稿
+    darf_mcp/               # DARF MCP server code and tests
+    corax_mcp/              # CORAX MCP server code
+  reports/                  # primary audience-facing report
+  site/                     # static audience-facing page
   skills/
-    darf/                   # DARF skill 文档和 references
-    corax/                  # CORAX skill 文档、references、schemas
-  src/quant_audit_benchmark/# 当前可运行 benchmark scaffold
-  tests/                    # scaffold 测试
-  CONFIGURATION.md          # 路径和环境变量说明
-  PROJECT_STATUS.md         # 当前完成度和后续开发路线
+    darf/                   # DARF skill docs and references
+    corax/                  # CORAX skill docs, references, and schemas
+  src/quant_audit_benchmark/# runnable benchmark scaffold
+  tests/                    # benchmark tests
+  CONFIGURATION.md          # environment and path configuration
+  PROJECT_STATUS.md         # current status and remaining work
 ```
 
-## DARF / CORAX 对应关系
+## DARF and CORAX Mapping
 
-DARF 是跨模型对抗审查：一个模型产出研究内容，流程把结论性文字剥离成 blind brief，再交给另一个 challenger 按 rubric 审查。对应代码主要在 `integrations/darf_mcp/`、`skills/darf/` 和 `commands/darf.md`。
+DARF is a cross-model adversarial review framework. A producer model creates research output, a stripping step turns that output into a blind brief, and a separate challenger reviews the brief against a phase-specific rubric. The project copy lives mainly in `integrations/darf_mcp/`, `skills/darf/`, and `commands/darf.md`.
 
-CORAX 是 Codex-native 审查：Codex Producer 产出，独立 Codex Reviewer 只看 blind brief 做 Santa Method review，再由 Claude Sentinel 检查同模型 groupthink 和共同盲区。对应代码主要在 `integrations/corax_mcp/`、`skills/corax/` 和 `commands/corax.md`。
+CORAX is a Codex-native review framework. A Codex producer creates the work, an independent Codex reviewer audits only a blind brief, and a Claude Sentinel checks the exchange for same-family groupthink and shared blind spots. The project copy lives mainly in `integrations/corax_mcp/`, `skills/corax/`, and `commands/corax.md`.
 
-当前 benchmark 里有两套运行入口：
+The benchmark exposes two entry styles:
 
-- `--adapter`：推荐入口，跑真正接入项目代码的 reviewer adapter。
-- `--profile`：兼容旧 deterministic profile，用于对照和快速调试。
+- `--adapter`: the recommended path, using real benchmark adapters.
+- `--profile`: a legacy deterministic profile path for quick debugging and backwards compatibility.
 
-adapter 的含义：
+Adapter meanings:
 
-- `single_llm_baseline`：模拟普通单轮审查。
-- `darf`：运行离线 DARF adapter，调用 `integrations/darf_mcp` 里的 normalization MCP scan，并按 blind review 方式隐藏 label 字段。
-- `corax`：运行离线 CORAX adapter，调用 `integrations/corax_mcp` 里的 lookahead scan、normalization scan 和 blind brief stripper，并加入 Sentinel claim check。
-- `corax-live`：运行 live CORAX adapter，真实调用本机 Codex CLI reviewer，并保存 raw verdict、latency 和 error。它本身只跑 Codex Reviewer；Claude Sentinel 通过 `--sentinel-summary` 作为 summary-level meta-review 可选运行。
-- `darf-live`：运行 live DARF adapter，调用 DARF `CodexBackend` 做 blind challenger review，并保存 raw verdict、latency、backend metrics 和 error。
-- `--sentinel-summary`：可选运行一次 Claude Sentinel meta-review，对最终 evaluation summary 做 claim check / groupthink check，并保存 `sentinel-summary.json`。
+- `single_llm_baseline`: a naive single-pass rule baseline.
+- `darf`: an offline DARF adapter that calls the DARF normalization scan and hides label fields in a blind-review style.
+- `corax`: an offline CORAX adapter that calls CORAX lookahead scan, normalization scan, and blind brief stripping.
+- `corax-live`: a live CORAX adapter that calls the local Codex CLI reviewer and saves raw verdicts, latency, and errors. This adapter evaluates the reviewer step only; Claude Sentinel can be run separately through `--sentinel-summary`.
+- `darf-live`: a live DARF adapter that calls the DARF `CodexBackend` blind challenger and saves raw verdicts, latency, backend metrics, and errors.
+- `--sentinel-summary`: an optional Claude Sentinel meta-review over the final evaluation summary, saved as `sentinel-summary.json`.
 
-默认 benchmark 是可复现的 offline prototype，不需要 API key 就能跑；明确传 `--adapter corax-live`、`--adapter darf-live` 或 `--sentinel-summary` 时，会调用本机 CLI 工具。
+The default benchmark path is offline and reproducible without API keys. Live adapters and Sentinel require local CLI credentials.
 
-## 快速运行
+## Quick Start
 
-基础 benchmark 和离线 adapter 只依赖 Python 标准库，Python 3.11+ 即可。
+The offline benchmark uses only the Python standard library. Python 3.11+ is enough for the benchmark tests and default adapters.
 
 ```bash
 python -m unittest discover -s tests
@@ -77,11 +75,13 @@ python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --ada
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax
 ```
 
-CLI 会输出每个 case 的审查结果、raw adapter output，以及 precision / recall / F1。默认不传 `--adapter` 时会依次运行 `single_llm_baseline`、`darf`、`corax`。
+The CLI prints per-case findings, raw adapter output, and precision / recall / F1. With no explicit `--adapter`, it runs `single_llm_baseline`, `darf`, and `corax`.
 
-当前 `benchmark_cases/cases.json` 保存被审查 artifact，`benchmark_cases/annotations.json` 保存人工 ground-truth label、severity 和 rationale。新增 case 时需要同时补 annotation；loader 会对缺失标签、重复 case id、未知 issue type、缺失或空数据 fixture 给出明确错误。
+`benchmark_cases/cases.json` stores audited artifacts. `benchmark_cases/annotations.json` stores human ground-truth labels, severity, and rationale. Adding a case requires adding a matching annotation. The loader fails clearly on missing labels, duplicate case IDs, unknown issue types, missing fixtures, and empty fixtures.
 
-后续如果运行 live DARF / CORAX agent wrapper，需要先让 shell 找到正确的 Codex CLI：
+## Live Agent Runs
+
+For live DARF/CORAX agent runs, make sure the shell can find a working Codex CLI. On the development machine, the Codex Desktop bundled CLI was the working path:
 
 ```bash
 export PATH="/Applications/Codex.app/Contents/Resources:$PATH"
@@ -90,30 +90,27 @@ python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --ada
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-live --model gpt-5.4-mini --limit 3 --sentinel-summary
 ```
 
-Windows 下 Codex CLI 可能随 ChatGPT VSCode 扩展一起安装，需要设置 `QUANT_AUDIT_CODEX_RESOURCE_DIR` 指向其 `bin` 目录后再运行 live adapter；建议在 Git Bash 中运行以避免 PowerShell 的进程 spawn 限制。具体路径和环境变量见 `CONFIGURATION.md`。
+On Windows, Codex CLI may be installed with the ChatGPT VS Code extension. Set `QUANT_AUDIT_CODEX_RESOURCE_DIR` to the directory containing the executable and prefer Git Bash for live adapter runs. See `CONFIGURATION.md` for details.
 
-当前机器上的 npm global `codex` 入口不完整。live adapter 的模型可以通过 `--model` 或 `QUANT_AUDIT_LIVE_MODEL` 切换，便宜模型适合 smoke test，更好的模型适合最终 evaluation。live adapter 会把每个 case 的 raw artifact 写到 `.runtime/runs/<run_id>/<adapter>/<case_id>.json`，并把 aggregate metrics 写到 `.runtime/runs/<run_id>/results.json`。完整说明见 `CONFIGURATION.md` 的“本机 Codex / Claude CLI”。
+The npm-global `codex` entry on the development machine was incomplete because it lacked the native Codex binary. Prefer `/Applications/Codex.app/Contents/Resources/codex` when available.
 
-## 运行 DARF MCP 测试
+Models are intentionally configurable. Use a cheaper model for smoke tests and a stronger model for final evaluation through `--model` or `QUANT_AUDIT_LIVE_MODEL`. Use `--limit` or `--case-id` to control cost. Live artifacts are written to `.runtime/runs/<run_id>/<adapter>/<case_id>.json`, and aggregate metrics are written to `.runtime/runs/<run_id>/results.json`.
 
-完整 DARF / CORAX 逻辑需要额外依赖，建议 Python 3.13。先安装依赖：
+## DARF MCP Tests
+
+The full DARF/CORAX integration layer has additional dependencies. Python 3.13 was used for the MCP tests.
 
 ```bash
 python -m pip install -r requirements.txt
-```
-
-运行 DARF MCP 测试：
-
-```bash
 cd integrations/darf_mcp
 python -m pytest tests
 ```
 
-当前已验证结果：
+## Verified Results
 
-- `python -m unittest discover -s tests`：22 passed。
-- `cd integrations/darf_mcp && python -m pytest tests`：103 passed。
-- 五个 adapter 已在完整 45 个 case 上完成评估，90 次 live 模型调用零失败，每个 case 都返回可解析的 verdict。
+- `python -m unittest discover -s tests`: 22 passed.
+- `cd integrations/darf_mcp && python -m pytest tests`: 103 passed.
+- All five adapters were evaluated on the full 45-case benchmark. The two live adapters completed 90 model calls with zero adapter failures and parseable verdicts for every case.
 
 | Adapter | Mode | Precision | Recall | F1 | FP | FN |
 |---|---|---:|---:|---:|---:|---:|
@@ -123,55 +120,43 @@ python -m pytest tests
 | `corax-live` | live | 0.9722 | 0.9722 | 0.9722 | 1 | 1 |
 | `darf-live` | live | 0.8182 | 1.0000 | 0.9000 | 8 | 0 |
 
-- offline `darf` 和 `corax` 在本 case set 上操作等价（共用确定性 normalization scan）。
-- `corax-live` F1 最高；`darf-live` recall 达到 1.0，是唯一抓住全部标注问题的 adapter，代价是 8 个 false positive。
-- Claude Sentinel summary wrapper 已接入 CLI 和 mock tests；真实调用需要本机 Claude CLI 可用并已登录。
-- 完整结果分析见 `reports/primary_report.md`。
+The offline `darf` and `corax` adapters are operationally equivalent on this benchmark because they share deterministic scanner behavior. `corax-live` has the strongest F1, while `darf-live` has the highest recall and catches every annotated issue at the cost of more false positives. The full analysis is in `reports/primary_report.md`.
 
-## 配置方式
+## Configuration
 
-项目里已经去掉个人机器路径。DARF / CORAX 运行时文件默认写到 `.runtime/`，也可以通过环境变量改路径。
+The repository does not hard-code personal machine paths. DARF/CORAX runtime files default to `.runtime/` and can be redirected through environment variables.
 
-常用变量：
+Common variables:
 
-- `DARF_DATA_DIR`：DARF DB、jobs、logs 的目录，默认 `.runtime/darf`。
-- `DARF_DB_PATH`：DARF SQLite DB 路径。
-- `DARF_JOBS_DIR`：DARF 后台 review job 存储目录。
-- `DARF_SKILL_DIR`：DARF skill 目录，默认 `skills/darf`。
-- `DARF_CHALLENGER_PROMPT_PATH`：DARF challenger prompt 模板。
-- `CORAX_DATA_DIR`：CORAX runtime 目录，默认 `.runtime/corax`。
-- `CORAX_SKILL_DIR`：CORAX skill 目录，默认 `skills/corax`。
-- `CORAX_LESSONS_DB_PATH`：CORAX lessons DB 路径，默认 `.runtime/shared/darf-lessons.db`。
-- `CORAX_COST_DB_PATH`：CORAX cost DB 路径。
-- `CORAX_LESSONS_FLAT_DIR`：CORAX flat lessons 输出目录。
+- `DARF_DATA_DIR`: DARF DB, jobs, and logs directory. Default: `.runtime/darf`.
+- `DARF_DB_PATH`: DARF SQLite DB path.
+- `DARF_JOBS_DIR`: DARF background review job directory.
+- `DARF_SKILL_DIR`: DARF skill directory. Default: `skills/darf`.
+- `DARF_CHALLENGER_PROMPT_PATH`: DARF challenger prompt template.
+- `CORAX_DATA_DIR`: CORAX runtime directory. Default: `.runtime/corax`.
+- `CORAX_SKILL_DIR`: CORAX skill directory. Default: `skills/corax`.
+- `CORAX_LESSONS_DB_PATH`: CORAX lessons DB path. Default: `.runtime/shared/darf-lessons.db`.
+- `CORAX_COST_DB_PATH`: CORAX cost DB path.
+- `CORAX_LESSONS_FLAT_DIR`: CORAX flat lessons output directory.
 
-更完整说明见 `CONFIGURATION.md`。
+See `CONFIGURATION.md` for the complete environment notes.
 
-## 当前限制
+## Current Limitations
 
-- 当前 45 个 case 已包含 BTC 真实数据 fixture、QuoteMedia 股票样本和两个真实 notebook workflow artifacts；后续 Route B 扩展可以继续加入更多真实数据集、真实 notebook/script 或真实 report excerpt。
-- `darf-live` 已接到 benchmark CLI，但还需要真实模型 smoke test 记录。
-- Claude Sentinel summary wrapper 已有最小 Python wrapper，但还需要真实 Claude CLI smoke test，并且还没有接入每个 CORAX phase 的完整 gate protocol。
-- CORAX MCP 代码已经放进项目，但 producer / reviewer subprocess wrapper 还缺直接测试。
-- lessons DB migration 脚本还需要整理进项目，才能完整支持 CORAX lessons 写入流程。
-- raw agent output、cost、latency、failure case 已有基本保存路径，但 cost estimate 和更细的 schema validation 还需要完善。
+- The 45-case benchmark includes real market fixtures and notebook-derived workflows, but more real scripts, reports, and notebooks would make the evaluation stronger.
+- The benchmarked live path covers single-pass reviewer/challenger behavior. The full DARF/CORAX orchestration, including phase-level Sentinel gates and mutation ladders, is present in project logic but not fully benchmarked.
+- CORAX MCP still needs a DARF-style test suite.
+- Lessons DB migration scripts and more detailed cost estimates remain follow-up work.
+- Live adapter artifacts capture raw output, latency, errors, and parsed verdicts, but schema validation and warning classification can be made stricter.
 
-## 下一步开发
+## Do Not Commit
 
-- 给 `darf-live` 补真实模型 smoke test 记录。
-- 给 Claude Sentinel wrapper 补真实 Claude CLI smoke test 记录，并视需要接入更完整的 phase-level gate protocol。
-- 给 live adapter 增加 cost estimate 和更细的 schema validation。
-- 增加更多真实数据集、真实 notebook / script case 和真实 report excerpt。
-- 加测试：blind brief stripping、malformed JSON、schema validation、lookahead、normalization leakage、missing cost、unsupported claim、完整 pipeline integration。
+- API keys.
+- `.env` files.
+- Local MCP logs.
+- Local SQLite runtime DBs.
+- Personal Claude/Codex configuration.
+- Unreviewed `.runtime/` artifacts.
+- `__pycache__`, `.pytest_cache`, and `.ruff_cache`.
 
-## 不要提交的内容
-
-- API key
-- `.env`
-- 本地 MCP 日志
-- 本地 SQLite runtime DB
-- Claude / Codex 个人配置
-- `.runtime/`
-- `__pycache__`、`.pytest_cache`、`.ruff_cache`
-
-这些已经写进 `.gitignore`。
+`.gitignore` contains defense-in-depth exclusions for these files.

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import json
 import logging
-from pathlib import Path
 from typing import Any
 
 from .protocol import ChallengerBackend
@@ -155,17 +154,17 @@ async def handle_tool(name: str, arguments: dict[str, Any]) -> str:
 
         full_prompt = (
             f"{template}\n\n"
-            f"## 审查材料\n\n"
+            f"## Review Material\n\n"
             f"### Blind Brief\n{brief}\n\n"
-            f"### 评估标准 (Rubric)\n{rubric}\n\n"
-            f"请返回严格 JSON 格式的审查结果，不要加任何 JSON 之外的文字。"
+            f"### Evaluation Rubric\n{rubric}\n\n"
+            f"Return strict JSON only. Do not include text outside JSON."
         )
 
         result = await _primary.review(full_prompt)
 
         # Primary failed -- delegate to fallback adapter
         if result.get("fallback"):
-            # 保留 primary 原始错误信息供调试
+            # Keep primary raw error details for debugging.
             codex_error_snapshot = {
                 "error": result.get("error"),
                 "message": (str(result.get("message", ""))[:500]) or None,
@@ -173,12 +172,12 @@ async def handle_tool(name: str, arguments: dict[str, Any]) -> str:
                 "raw_output_head": (str(result.get("raw_output", ""))[:500]) or None,
                 "last_error": result.get("last_error"),
             }
-            # 去掉 None 字段，保持 payload 简洁
+            # Drop None fields to keep the payload compact.
             codex_error_snapshot = {
                 k: v for k, v in codex_error_snapshot.items() if v is not None
             }
 
-            # 同时调 get_model_health 拿 metrics 快照
+            # Capture a metrics snapshot from get_model_health as well.
             try:
                 codex_metrics = _primary.get_metrics()
             except Exception as exc:  # noqa: BLE001

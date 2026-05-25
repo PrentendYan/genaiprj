@@ -6,7 +6,6 @@ axes to apply based on failure_category, round, and history.
 """
 
 import re
-from pathlib import Path
 from typing import Any
 
 try:

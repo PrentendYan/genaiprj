@@ -6,7 +6,6 @@ sections according to axis definitions from mutation-axes.yaml.
 """
 
 import re
-from pathlib import Path
 from typing import Any
 
 try:

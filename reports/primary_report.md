@@ -22,17 +22,17 @@ It is important to be precise about what this report evaluates. The descriptions
 
 ## Benchmark Design
 
-The benchmark contains 45 labeled audit cases. Each case is a small piece of real research material, such as a feature-engineering snippet, a backtest, a model-training routine, a notebook workflow, or a research write-up, paired with a separate annotation recording its expected issues, severity, and a rationale.
+The benchmark contains 45 labeled audit cases. Each case is a small finance-research artifact, such as a feature-engineering snippet, a backtest, a model-training routine, a notebook workflow, or a research write-up, paired with a separate annotation recording its expected issues, severity, and a rationale.
 
 The cases cover five failure modes plus clean controls: lookahead bias (7 cases), missing transaction costs (10), full-sample normalization leakage (7), random splits applied to time series (7), and unsupported performance claims (5), with 11 clean cases that contain no issue. The clean cases matter as much as the positive ones: they are how the benchmark detects an over-eager reviewer that flags problems where none exist. Several clean cases are deliberate near-misses, the correctly written version of a specific error, so a reviewer that confuses the two is exposed precisely.
 
-Cases draw on real material rather than synthetic constructions. They reference a bundled BTC historical sample, a QuoteMedia multi-stock price sample, and two real tutorial notebooks. The harness raises an error when a referenced data fixture is missing and never substitutes synthetic fallback data; the case loader likewise rejects missing labels, duplicate case IDs, and unknown issue types rather than passing them through silently. The intent is that the evaluation target itself is trustworthy before any reviewer is run against it.
+Cases are grounded in real market data, real documents, or real finance workflows rather than synthetic fallback data. They reference a bundled BTC historical sample, a QuoteMedia multi-stock price sample, and two real tutorial notebooks. The harness raises an error when a referenced data fixture is missing and never substitutes generated data; the case loader likewise rejects missing labels, duplicate case IDs, and unknown issue types rather than passing them through silently. The intent is that the evaluation target itself is trustworthy before any reviewer is run against it.
 
 ## Methodology
 
 Five reviewer adapters are evaluated, all through one command-line interface that loads cases, runs the selected adapter, compares its findings against the labels, and reports metrics.
 
-Two adapters run **offline**: they reach a verdict through deterministic scans and rules, call no model, cost nothing, and return identical results on every run. `single_llm_baseline` applies a small set of regular-expression rules and serves as the naive control. `darf` and `corax` invoke the project's deterministic MCP scans for lookahead and normalization leakage.
+Three adapters run **offline**: they reach a verdict through deterministic scans and rules, call no model, cost nothing, and return identical results on every run. `single_llm_baseline` applies a small set of regular-expression rules and serves as the naive control. `darf` and `corax` invoke the project's deterministic MCP scans for lookahead and normalization leakage.
 
 Two adapters run **live**: `corax-live` and `darf-live` spawn a real Codex model that reads each case and produces a structured verdict. Live review is non-deterministic, since the same case can yield slightly different output across runs, and this is itself a reportable property, in contrast to the offline adapters' exact reproducibility.
 

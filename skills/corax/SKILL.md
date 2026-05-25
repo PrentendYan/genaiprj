@@ -1,215 +1,199 @@
 ---
 name: corax
-description: Codex-Native Adversarial Research Framework — Codex-on-Codex Santa Method + Claude Opus Sentinel meta review for quant research
+description: Codex-Native Adversarial Research Framework - Codex-on-Codex Santa Method plus Claude Opus Sentinel meta review for quant research
 argument-hint: "[--auto] [phase] [task-description]"
 user-invocable: true
 ---
 
 # CORAX
 
-**Codex-Oriented Research with Adversarial eXecution** — Codex 作为主生产者的量化研究框架。详细执行流程见 `$corax` command。与 DARF 独立共存，仅共享 lessons DB。
+CORAX means Codex-Oriented Research with Adversarial eXecution. It is a quant research framework where Codex is the main producer, a separate Codex instance reviews a blind brief, and Claude Sentinel performs heterogeneous meta-review. The full execution flow is documented in the `$corax` command.
 
-## Two Inputs
+CORAX coexists with DARF. It does not replace DARF; the only intentional shared resource is the lessons DB.
 
-**1. Goal Clarity Check (BLOCKING)** — 评估 0-10 分，≥7 继续，<7 追问。即使 auto 也不跳过。
-- 目标清晰度(0-3) + 预期产出(0-3) + 范围边界(0-2) + 约束条件(0-2)
+## Required Inputs
 
-**2. Auto Mode (`--auto`)** — 静默执行，分类裁决，仅异常/完成通知，维护 execution-log.md。
+**Goal clarity check (blocking):** score the task from 0 to 10. Continue only when the score is at least 7. Ask follow-up questions when the score is below 7, including in auto mode.
 
-⚠️ **Auto Mode 启动前置条件**：当用户提到 auto CORAX，必须提示用户在新 session 中启动：
+Scoring dimensions:
 
-```
-# 步骤 1：新开终端或退出当前 session
-# 步骤 2：用 auto 权限启动
+- Goal clarity: 0-3.
+- Expected output: 0-3.
+- Scope boundary: 0-2.
+- Constraints: 0-2.
+
+**Auto mode (`--auto`):** execute silently, classify issues, notify only on exceptions or completion, and maintain `execution-log.md`.
+
+When the user requests CORAX auto mode, instruct them to start a new session with automatic permissions:
+
+```bash
 claude --permission-mode auto
-# 步骤 3：在新 session 中输入
-$corax --auto "你的任务描述"
+$corax --auto "your task description"
 ```
 
-当前 session 不是 `permission-mode auto` 时，禁止进入 auto 模式。
+Do not enter auto mode from a session that was not started with the required permission mode.
 
 ## Architecture
 
-```
-Codex-Producer → phase-output.md + producer-summary.json → strip conclusions → blind-brief.md
-                                                                                       |
-                                                          MCP: corax_reviewer_exec → codex-verdict.json
-                                                                                       |
-                              +--------------------------------------------------------+
-                              | FAIL -> fix cycle (max 3)                              |
-                              | PASS -> Claude Opus Sentinel (Agent, 1x/phase)         |
-                              |         -> sentinel-verdict.json                       |
-                              |         -> Gate 判定矩阵                                |
-                              +--------------------------------------------------------+
-                                                      |
-                                    advance | fix cycle | mutation ladder | escalate
+```text
+Codex Producer
+  -> phase-output.md + producer-summary.json
+  -> strip conclusions
+  -> blind-brief.md
+  -> Codex Reviewer verdict
+  -> if PASS, Claude Sentinel meta-review
+  -> gate: advance, fix cycle, mutation ladder, or escalate
 ```
 
-**三个 Actor**：
-- **Codex-Producer**：agentic 生产，可读写 workspace。**Interactive 和 auto 都用** `codex exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check`（`codex exec` headless 只有 `--full-auto`（可能挂起）或 bypass 两选，bypass 是唯一可靠的 headless 选项）。**不使用 `--add-dir`**（该 flag 会额外授权写入，违背 shared/ 只读意图）；**不使用 symlink**（会穿透写入原文件）；shared/ 内容由 skill 侧预先内联进 prompt stdin 或**物理拷贝**到 phase 目录。Interactive 模式的 safety 来自 Claude skill 的**预审批**（每次 Producer 启动前用 AskUserQuestion 确认）+ **后验证**（扫描变更 + 跑量化审计 tools）
-- **Codex-Reviewer**：`codex exec --ephemeral --skip-git-repo-check --sandbox read-only` 独立 context 审查，仅看 blind brief（内联在 prompt stdin）。read-only 天然无写权限所以无需审批
-- **Claude Opus Sentinel**：skill 内直接调 `Agent` 工具，每 phase 仅 1 次，做 meta review 检测同构盲区
+Actors:
 
-## 5 Phases
+- Codex Producer: agentic writer with a workspace. Headless execution uses bypass mode, so safety comes from pre-approval and post-run verification.
+- Codex Reviewer: independent read-only reviewer that sees only the blind brief.
+- Claude Sentinel: heterogeneous meta-reviewer that checks same-family groupthink and shared blind spots.
 
-| Phase | 核心活动 | Gate Rubric 重点 |
-|-------|---------|-----------------|
-| 1.Research | 文献调研 + 假设生成 | 假设可证伪、无幸存者偏差、point-in-time |
-| 2.Design | 实验设计 + 方法论 | 时序切分正确、无信息泄漏、评估指标合理 |
-| 3.Implement | GSD-Enhanced 编码 + TDD | shift/lag 正确、前视偏差审计、文件隔离 |
-| 4.Validate | 回测 + 统计分析 | OOS 非 cherry-pick、多重比较校正、交易成本 |
-| 5.Report | 研究报告 | 结论有据、局限性诚实、可复现 |
+## Five Phases
+
+| Phase | Core activity | Main gate focus |
+|---|---|---|
+| 1 Research | literature review and hypothesis generation | falsifiability, survivorship bias, point-in-time evidence |
+| 2 Design | experiment design and methodology | chronological split, no leakage, appropriate metrics |
+| 3 Implement | GSD-enhanced coding and TDD | shift direction, lookahead checks, file isolation |
+| 4 Validate | backtest and statistical analysis | OOS design, multiple testing, transaction costs |
+| 5 Report | research report | evidence-backed claims, honest limitations, reproducibility |
 
 ## GSD-Enhanced Phase 3
 
-Phase 3 拆 2-3 个 Plan，每个 Plan 由 **Codex-Producer 独立 session** 执行，**各 Plan 有独立子目录** `phase-3-implement/plan-{a,b,c}/` 作为 `-C` 根（防止并行写冲突）。所有 Plan 完成后 skill 侧做合并 + `corax_verify_implementation` 4-level 验证。
+Phase 3 is split into two or three plans. Each plan runs in its own Codex Producer session and its own workspace under `phase-3-implement/plan-{a,b,c}/`. After all plans complete, the skill layer merges deliverables into `phase-3-implement/merged/` and runs `corax_verify_implementation`.
 
-**验证阻断策略**（量化代码对运行时正确性零容忍）：
-- L1 FAIL（文件不存在）-> 阻断修复（最多 2 轮）
-- L2 FAIL（import 报错）-> 阻断修复（最多 2 轮）
-- L3 FAIL（运行 crash）-> 阻断修复（最多 2 轮）
-- L4 FAIL（断言不符，对 critical deliverables）-> 阻断修复（最多 2 轮）
-- L4 FAIL（对非 critical deliverables）-> 记 WARNING 继续
+Blocking verification policy for quant code:
 
-Critical deliverables 在每个 Plan 的 YAML 里显式标记（`critical: true`）。默认假设所有 deliverables 是 critical，除非明确标为非 critical。详见 [Implementation Plan Template](references/implementation-plan-template.md) 和 [Verification Levels](references/verification-levels.md)。
+- L1 missing file: block and fix.
+- L2 import failure: block and fix.
+- L3 runtime crash: block and fix.
+- L4 assertion mismatch on critical deliverables: block and fix.
+- L4 assertion mismatch on non-critical deliverables: warning only.
 
-## Gate 判定矩阵
+Deliverables are critical by default unless a plan explicitly marks `critical: false`.
 
-| Codex-Reviewer | Claude Sentinel | Interactive | Auto |
+## Gate Matrix
+
+| Codex Reviewer | Claude Sentinel | Interactive mode | Auto mode |
 |---|---|---|---|
-| FAIL | (skip) | fix cycle (3) | fix cycle (3) |
-| PASS | groupthink=LOW, clean | advance | advance |
-| PASS | groupthink=LOW, concerns | advance + log | advance + log |
-| PASS | groupthink=MEDIUM | advance + watchlist | advance + watchlist |
-| PASS | groupthink=HIGH | mutation ladder (3 rounds) | mutation ladder (3 rounds) |
-| PASS | SOFT_VETO | fix cycle (+3) | fix cycle (+3) |
-| PASS | HARD_VETO | ⚠️ escalate to user | Codex self-solve (+2) -> 失败 escalate |
+| FAIL | skipped | fix cycle | fix cycle |
+| PASS | low risk | advance | advance |
+| PASS | low risk with concerns | advance and log | advance and log |
+| PASS | medium risk | advance with watchlist | advance with watchlist |
+| PASS | high risk | mutation ladder | mutation ladder |
+| PASS | soft veto | fix cycle | fix cycle |
+| PASS | hard veto | escalate to user | Codex self-solve, then escalate if unresolved |
 
-完整矩阵见 [Gate Protocol](references/gate-protocol.md)。
+See `references/gate-protocol.md`.
 
-## Anti-Sycophancy (5 层)
+## Anti-Sycophancy Layers
 
-1. **Blind Brief** — Codex-Reviewer 只看事实，不看 Producer 结论
-2. **假设有罪** — 先假设有问题，再证明没问题
-3. **强制反论点** — 必须提 ≥1 counter_argument + ≥1 alternative_approach
-4. **完美即可疑** — 全 PASS 时 confidence 上限 MEDIUM
-5. **Groupthink 检测** — 由 Claude Opus Sentinel 专职负责（V2 Meta Reviewer 角色）
+1. Blind brief: reviewer sees facts, not producer conclusions.
+2. Presumption of risk: reviewers begin by looking for failure modes.
+3. Forced counterarguments: require at least one counterargument and one alternative approach.
+4. Suspicious perfection: all-pass runs cap confidence at medium.
+5. Sentinel groupthink check: Claude Sentinel focuses on same-family blind spots.
 
-同构模型的 groupthink 风险比跨模型高，Sentinel 是这个框架的核心防线。详见 [Sentinel Protocol](references/sentinel-protocol.md) 和 [Anti-Sycophancy Rules](references/anti-sycophancy-rules.md)。
+## Mutation Ladder
 
-## Mutation Ladder（Groupthink 应对）
+High groupthink triggers prompt and context mutation. Mutation axes include persona, context composition, constraint injection, adversarial framing, diversity requirement, failure scenario priming, sampling, and reference anchoring.
 
-Sentinel 标 `groupthink=HIGH` -> 触发 mutation ladder。8 轴可组合变异：
+Escalation schedule:
 
-| 轴 | 作用 |
-|---|---|
-| 1. Persona | 切换 Codex-Producer 身份（researcher/auditor/red_team/...） |
-| 2. Context Composition | 换参考材料集合（注入 lesson DB 查询结果） |
-| 3. Constraint Injection | 硬禁令清单 |
-| 4. Adversarial Framing | "假设方案有 bug，找 3 个最可能漏洞" |
-| 5. Diversity Requirement | 强制列 N 个替代方案再选一个 |
-| 6. Failure Scenario Priming | 从 lesson DB 拉 top-5 同类问题作必查项 |
-| 7. Temperature / Sampling | 多候选后自选 |
-| 8. Reference Anchoring | 强制引用 ≥2 篇文献/lesson |
+- Round 1: use three axes.
+- Round 2: use five axes.
+- Round 3: use all axes.
+- Still high risk after three rounds: escalate.
 
-Round 升级：Round 1 选 3 轴 -> Round 2 选 5 轴 -> Round 3 全 8 轴。3 轮仍 HIGH -> 强制 escalate。详见 [Mutation Ladder Protocol](references/mutation-ladder-protocol.md)。
+See `references/mutation-ladder-protocol.md`.
 
-## 预算系统
+## Budgets
 
-| 预算 | Default | 含义 |
-|---|---|---|
-| `codex_fix_cycles` | 3 | Codex Reviewer FAIL 的修复轮数 |
-| `sentinel_soft_veto_cycles` | 3 | Sentinel SOFT_VETO 追加修复（独立预算） |
-| `auto_hard_veto_cycles` | 2 | auto 模式 HARD_VETO 自解决 |
-| `mutation_rounds_max` | 3 | mutation ladder 上限 |
-| `phase_total_cap` | 9 | 单 phase 总循环次数硬帽 |
-| `phase_timeout_s` | 1800 | 单 phase wall-clock 上限 |
-| `review_timeout_s` | 600 | 单次审查调用上限 |
-| `network_error_consecutive_limit` | 5 | 连续 network error 退出阈值 |
+| Budget | Default | Meaning |
+|---|---:|---|
+| `codex_fix_cycles` | 3 | Reviewer-fail repair rounds |
+| `sentinel_soft_veto_cycles` | 3 | Extra repair rounds for Sentinel soft veto |
+| `auto_hard_veto_cycles` | 2 | Auto-mode self-solve attempts for hard veto |
+| `mutation_rounds_max` | 3 | Mutation ladder cap |
+| `phase_total_cap` | 9 | Hard cap on loops per phase |
+| `phase_timeout_s` | 1800 | Phase wall-clock limit |
+| `review_timeout_s` | 600 | Review-call timeout |
+| `network_error_consecutive_limit` | 5 | Consecutive network-error exit threshold |
 
-完整 default config 见 [default-config.json](references/default-config.json)。
+See `references/default-config.json`.
 
-## Network Error 退出机制
+## Network Exit
 
-连续 5 次 network error -> 清理所有 Codex subprocess + STATE.md 写 `status: network_exit` + 释放控制权（非 escalate）。Resume 时先跑 `corax_health` 探活，通过后从 `current_phase` 继续。
-
-识别关键词：`network | timeout | ECONN | DNS | unreachable | 502 | 503 | 504`。
+After five consecutive network errors, CORAX should clean up Codex subprocesses, write `status: network_exit` to `STATE.md`, and release control. On resume, run `corax_health` before continuing from `current_phase`.
 
 ## Workspace
 
-```
+```text
 corax-workspace/
-  config.json, execution-log.md, STATE.md, mutation-trace.md,
-  shared/, phase-{n}-{name}/, final-report.md
+  config.json
+  execution-log.md
+  STATE.md
+  mutation-trace.md
+  shared/
+  phase-{n}-{name}/
+  final-report.md
 ```
 
-每个 phase 目录：`phase-output.md, producer-summary.json, blind-brief.md, codex-verdict.json, sentinel-verdict.json, gate-result.md, fix-history/`
+Each phase directory stores `phase-output.md`, `producer-summary.json`, `blind-brief.md`, `codex-verdict.json`, `sentinel-verdict.json`, `gate-result.md`, and `fix-history/`.
 
-Phase 3 额外：
-- `plans/plan-{a,b,c}.yaml` — Plan 定义
-- `plan-a/, plan-b/, plan-c/` — **每个 Plan 独立子目录**（作为 Codex `-C` 根，防并行写冲突）
-- `merged/` — 所有 Plan 完成后 skill 合并产出的最终代码
-- `verification/` — 4-level 验证结果
+Phase 3 also stores plan YAML files, isolated plan directories, merged output, and verification output.
 
-STATE.md 跟踪跨 session 状态（<100 行）。详见 [State Template](references/state-template.md)。
+## Shared Brain
 
-## Shared Brain（唯一跨框架耦合）
+The shared lessons DB path is configured by `CORAX_LESSONS_DB_PATH`; the project default is `.runtime/shared/darf-lessons.db`.
 
-**物理路径**：由 `CORAX_LESSONS_DB_PATH` 配置；项目默认使用 `.runtime/shared/darf-lessons.db`。
+The `darf-` filename prefix is historical. Logically, this DB is shared across frameworks. The `source_framework` column identifies whether a lesson came from DARF or CORAX. CORAX stores framework-specific metadata in `metadata` while preserving the original DARF-compatible domain constraints.
 
-文件名带 `darf-` 前缀是**历史原因**——DB 原本属 DARF，CORAX 后接入。**逻辑上它是跨框架共享**的：两个框架都读写同一物理文件，通过 `source_framework` 列区分来源。
-
-**Schema 合约**（冻结）：基于 DARF 原有 11 列 + CORAX 迁移新加的 2 列 = 13 列。
-新加的 2 列是 `metadata TEXT DEFAULT '{}'`（JSON blob，承载 CORAX 专属字段）和 `source_framework TEXT DEFAULT 'darf'`。
-
-**CHECK 约束绕过**：DARF 原 schema 有 `domain IN ('quant_method','darf_flow','gate_rubric','challenger')` 的 CHECK。CORAX 不改这个约束，而是通过**映射**把 CORAX category 转成 DARF 允许值，CORAX 原始 category 存到 `metadata.corax_category`。映射见 [Lesson Extraction](references/lesson-extraction.md)。
-
-CORAX 写入时强制 `source_framework='corax'`（tool 内硬编码）。搜索时支持按 `source_framework` 过滤（None / corax / darf / cross）。
-
-启动时 `corax_lessons_add` / `corax_lessons_search` 会 verify schema（检查 metadata + source_framework 两列存在）；未迁移则拒启并提示用户对配置的 lessons DB 运行迁移。
+The shared DB is deliberate coupling, not accidental leakage. Risks such as lesson contamination and source-label drift are mitigated by validation rules and `source_framework` filters.
 
 ## Self-Learning
 
-Gate FAIL / fix cycle / 用户反馈 -> lesson 提取 -> 3 条件验证（可复现 + 非偶发 + 可泛化）-> `corax_lessons_add` 写入（tool 强制 `source_framework='corax'`）-> 频次 ≥3 时 `corax_lessons_sync_files` 同步到 `data/lessons-flat/corax/`。详见 [Lesson Extraction](references/lesson-extraction.md)。
+Gate failures, fix cycles, and user feedback can become lessons when they are reproducible, non-incidental, and generalizable. CORAX writes lessons with `source_framework='corax'` and syncs high-frequency lessons to `data/lessons-flat/corax/` when configured.
 
-## MCP Tools (corax-mcp server, 21 tools)
+## MCP Tools
 
-注册位置由运行环境配置。项目内默认代码位于 `integrations/corax_mcp/`，stdio 模式。
+The CORAX MCP server lives in `integrations/corax_mcp/` and runs in stdio mode when registered.
 
-| 类别 | Tool | 说明 |
-|------|------|------|
-| **Workspace** | `corax_init_workspace` | 初始化 workspace 目录树（config/STATE/shared） |
-| | `corax_state_read` | 读取 STATE.md frontmatter + body |
-| | `corax_state_write` | 部分更新 STATE.md frontmatter 字段 |
-| **Codex 执行** | `corax_producer_exec` | Codex Producer subprocess 封装 |
-| | `corax_reviewer_exec` | Codex Reviewer Santa Method 封装 |
-| **Brief** | `corax_strip_brief` | Phase output 剥离结论 |
-| **量化审计** | `corax_validate_no_lookahead` | 前视偏差扫描 |
-| | `corax_check_temporal_split` | 时序切分校验 |
-| | `corax_check_normalization_scope` | 归一化范围扫描 |
-| **验证** | `corax_verify_implementation` | 4-level 实质性验证 |
-| **变异** | `corax_mutation_select` | 按 failure_category 选轴 |
-| | `corax_mutation_apply` | 应用 mutation 到 base prompt |
-| **Lessons（共享 DB）** | `corax_lessons_add` | 强制 `source_framework='corax'` |
-| | `corax_lessons_search` | 支持 `source_framework` 过滤 |
-| | `corax_lessons_bump` | 频次+1 |
-| | `corax_lessons_sync_files` | 高频 lesson 同步到 `data/lessons-flat/corax/` 平文件缓存 |
-| | `corax_get_top_violations` | 高频问题排行，支持 `source_filter` |
-| **Ops** | `corax_cost_track` | 独立 cost DB |
-| | `corax_cost_report` | 按 phase/actor 聚合 |
-| | `corax_health` | codex + anthropic + lessons_db 三方状态 |
-| | `corax_suggest_review_level` | 建议 full/lite/skip 审查级别 |
+| Category | Tool | Purpose |
+|---|---|---|
+| workspace | `corax_init_workspace` | initialize workspace tree |
+| workspace | `corax_state_read` | read `STATE.md` |
+| workspace | `corax_state_write` | update `STATE.md` fields |
+| Codex execution | `corax_producer_exec` | Codex Producer subprocess wrapper |
+| Codex execution | `corax_reviewer_exec` | Codex Reviewer Santa Method wrapper |
+| brief | `corax_strip_brief` | strip phase output into a blind brief |
+| quant audit | `corax_validate_no_lookahead` | lookahead scan |
+| quant audit | `corax_check_temporal_split` | temporal split validation |
+| quant audit | `corax_check_normalization_scope` | normalization scope scan |
+| verification | `corax_verify_implementation` | four-level implementation verification |
+| mutation | `corax_mutation_select` | select mutation axes |
+| mutation | `corax_mutation_apply` | apply mutations to a prompt |
+| lessons | `corax_lessons_add` | add lesson as CORAX |
+| lessons | `corax_lessons_search` | search lessons with framework filter |
+| lessons | `corax_lessons_bump` | increment lesson frequency |
+| lessons | `corax_lessons_sync_files` | sync high-frequency lessons |
+| lessons | `corax_get_top_violations` | frequent issue ranking |
+| ops | `corax_cost_track` | cost tracking |
+| ops | `corax_cost_report` | aggregate cost report |
+| ops | `corax_health` | Codex, Anthropic, and lessons DB health |
+| ops | `corax_suggest_review_level` | suggest full/lite/skip review |
 
-**关键架构决定**：Claude Opus Sentinel **不作为 MCP tool 实现**，由 skill orchestration 在 gate 阶段直接调用 `Agent` 工具（subagent_type=general-purpose, model=opus）。详见 [Sentinel Protocol](references/sentinel-protocol.md)。
+Claude Sentinel is intentionally not an MCP tool. The skill orchestration calls it directly at the gate stage as a separate meta-reviewer.
 
-## 与 DARF 的关系
+## Relationship to DARF
 
-- **代码/进程/文件系统独立**：MCP server / skill / workspace / slash command / cost DB 全部独立
-- **知识层受控共享**：唯一共享资源是 `lessons.db`，通过 schema frozen 合约 + `source_framework` 标签受控。CORAX 的 Sentinel 会**显式读取 DARF 历史 lesson** 作为 Codex 潜在盲区参考——这是有意的跨框架学习，不是意外泄漏
-- **互不依赖**：CORAX 不 import darf-mcp 的任何模块；通用工具代码物理拷贝
-- **并存**：两个框架可以在同一个项目中同时存在，互不干扰
-
-⚠️ 注意措辞："代码独立"不等于"完全隔离"——两个框架在知识层是 **deliberate coupling**。这是设计选择，不是缺陷。受控共享的风险（lesson 污染、source 标签漂移）由 `lesson-extraction.md` 中的 3 条件验证 + `source_framework` 过滤机制缓解。
+- Code, process, workspace, command, and cost DB are independent.
+- The only intentional shared resource is the lessons DB.
+- CORAX does not import DARF MCP modules.
+- Both frameworks can coexist in the same project.
 
 ## References
 

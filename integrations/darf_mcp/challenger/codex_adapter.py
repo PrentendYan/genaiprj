@@ -39,9 +39,9 @@ _BACKOFF_BASE_S = 2
 # ---------------------------------------------------------------------------
 # Diagnostic file log (DARF debug)
 # ---------------------------------------------------------------------------
-# 独立的磁盘日志文件，记录 review() 的每个关键决策点。
-# 目的：在 MCP server 子进程里排查 fallback 根因。
-# 日志永远不 raise，即使写文件失败也不会打断 review。
+# Independent diagnostic file log for key review() decisions.
+# Used to debug fallback causes inside MCP server subprocesses.
+# Logging never raises, so logging failures do not interrupt review.
 _DEBUG_LOG_PATH = DEBUG_LOG_PATH
 _DEBUG_LOG_MAX_BYTES = int(os.environ.get("DARF_DEBUG_LOG_MAX", str(5 * 1024 * 1024)))
 
@@ -67,7 +67,7 @@ def _debug_log(stage: str, **fields: Any) -> None:
         line = json.dumps(record, ensure_ascii=False, default=str)
         with _DEBUG_LOG_PATH.open("a", encoding="utf-8") as fh:
             fh.write(line + "\n")
-    except Exception:  # noqa: BLE001 -- 日志失败绝不影响 review
+    except Exception:  # noqa: BLE001 -- logging failures must not affect review
         pass
 
 

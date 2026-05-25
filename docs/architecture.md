@@ -1,11 +1,11 @@
-# DARF / CORAX 架构说明
+# DARF / CORAX Architecture
 
-## 总览
+## Overview
 
-项目当前有两条线：
+The repository has two connected layers:
 
-- benchmark 线：`src/quant_audit_benchmark/` 负责加载 case、运行 reviewer adapter、计算 precision / recall / F1。
-- agent 线：`integrations/`、`skills/`、`commands/` 放入 DARF / CORAX 的完整审查机制，其中一部分已经通过 offline adapter 接到 benchmark。
+- Benchmark layer: `src/quant_audit_benchmark/` loads cases, runs reviewer adapters, and computes precision / recall / F1.
+- Agent layer: `integrations/`, `skills/`, and `commands/` contain the DARF/CORAX review mechanisms. Parts of this layer are connected to the benchmark through offline and live adapters.
 
 ```mermaid
 flowchart TD
@@ -21,54 +21,62 @@ flowchart TD
     I --> H
 ```
 
-## DARF 架构
+## DARF Architecture
 
-DARF 是跨模型对抗审查框架。典型流程：
+DARF is a cross-model adversarial review framework.
 
-- Producer 产出研究内容。
-- Workflow 生成 stripped blind brief，只保留事实、代码、数据和指标。
-- Codex Challenger 只看 blind brief 和 rubric。
-- Gate 根据 verdict 决定通过、返工、升级。
-- 发现的问题写入 lessons DB，之后可用于自学习。
+Typical flow:
 
-项目内位置：
+- A producer creates research output.
+- The workflow strips conclusions into a blind brief that keeps facts, code, data, and metrics.
+- A Codex challenger reviews only the blind brief and rubric.
+- A gate decides whether to advance, fix, escalate, or record warnings.
+- Useful failures are written into a lessons DB for later reuse.
 
-- MCP server：`integrations/darf_mcp/`
-- Skill：`skills/darf/`
-- Command orchestration：`commands/darf.md`
-- Portable config：`integrations/darf_mcp/config.py`
+Project locations:
 
-DARF 已经带有测试，当前 `integrations/darf_mcp/tests` 可跑通 103 个测试。
+- MCP server: `integrations/darf_mcp/`
+- Skill: `skills/darf/`
+- Command orchestration: `commands/darf.md`
+- Portable config: `integrations/darf_mcp/config.py`
 
-## CORAX 架构
+DARF currently has a runnable test suite under `integrations/darf_mcp/tests`.
 
-CORAX 是 Codex-native 对抗审查框架。典型流程：
+## CORAX Architecture
 
-- Codex Producer 产出 phase output。
-- `brief_stripper` 剥离结论，生成 blind brief。
-- Codex Reviewer 在独立 context 中只看 blind brief。
-- Reviewer PASS 后，Claude Sentinel 检查同模型 groupthink 和共同盲区。
-- Gate 根据 Reviewer + Sentinel 做 advance、fix cycle、mutation ladder 或 escalate。
+CORAX is a Codex-native adversarial review framework.
 
-项目内位置：
+Typical flow:
 
-- MCP server：`integrations/corax_mcp/`
-- Skill：`skills/corax/`
-- Schemas：`skills/corax/schemas/`
-- Command orchestration：`commands/corax.md`
-- Portable config：`integrations/corax_mcp/config.py`
+- A Codex Producer creates phase output.
+- `brief_stripper` removes conclusion framing and creates a blind brief.
+- A Codex Reviewer audits the blind brief in an isolated context.
+- After reviewer PASS, Claude Sentinel checks for same-family groupthink and shared blind spots.
+- The gate decides whether to advance, enter a fix cycle, climb the mutation ladder, or escalate.
 
-CORAX 的 MCP 代码已经迁入并通过语法编译，但还需要补更完整的测试。
+Project locations:
 
-## 当前 benchmark adapter
+- MCP server: `integrations/corax_mcp/`
+- Skill: `skills/corax/`
+- Schemas: `skills/corax/schemas/`
+- Command orchestration: `commands/corax.md`
+- Portable config: `integrations/corax_mcp/config.py`
 
-当前 `src/quant_audit_benchmark/adapters/` 中有三个可运行 adapter：
+CORAX MCP code has been migrated and compiles, but it still needs a fuller test suite.
+
+## Benchmark Adapters
+
+`src/quant_audit_benchmark/adapters/` currently includes five adapters:
 
 - `single_llm_baseline`
 - `darf`
 - `corax`
+- `corax-live`
+- `darf-live`
 
-`single_llm_baseline` 是 deterministic baseline。`darf` 会调用 DARF MCP normalization scan。`corax` 会调用 CORAX lookahead scan、normalization scan 和 blind brief stripper。三者都输出统一的 `ReviewResult`：
+`single_llm_baseline` is a deterministic baseline. `darf` calls the DARF normalization scan. `corax` calls CORAX lookahead scan, normalization scan, and blind brief stripper. `corax-live` and `darf-live` call local Codex-backed live reviewers and store raw artifacts.
+
+All adapters normalize into the same `ReviewResult` shape:
 
 ```mermaid
 flowchart LR
@@ -79,33 +87,20 @@ flowchart LR
     E --> F["Metrics"]
 ```
 
-## 运行时数据
+## Runtime Data
 
-所有运行时数据都应该写入 `.runtime/` 或通过环境变量指定路径。
+Runtime output should be written to `.runtime/` or to paths configured through environment variables.
 
-不应该写入：
+The project should not write to:
 
-- 个人 Claude / Codex 配置目录
-- repo 外部 DB
-- repo 外部日志
-- API key 或 `.env`
+- Personal Claude/Codex configuration directories.
+- External DB paths.
+- External log paths.
+- API keys or `.env` files.
 
-## 下一步接口建议
+## Core Interface
 
-已经新增：
-
-```text
-src/quant_audit_benchmark/
-  adapters/
-    base.py
-    darf.py
-    corax.py
-    deterministic.py
-    registry.py
-  runner.py
-```
-
-核心接口可以是：
+The benchmark layer depends on a small adapter interface:
 
 ```python
 class ReviewerAdapter:
@@ -113,4 +108,4 @@ class ReviewerAdapter:
         ...
 ```
 
-这样 benchmark 可以不关心底层是 regex、LLM API、Codex CLI、DARF MCP，还是 CORAX Sentinel。
+This keeps the benchmark independent from whether the underlying reviewer is a regex baseline, deterministic MCP tool, Codex CLI call, DARF challenger, or CORAX Sentinel path.

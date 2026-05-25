@@ -1,63 +1,61 @@
-# DARF / CORAX 内容索引
+# DARF / CORAX Content Map
 
-这个文件列出当前项目里已经整理进来的 DARF / CORAX 实现位置。
+This file maps the DARF/CORAX logic that has been moved into the project.
 
 ## DARF
 
-项目内 skill：
+Skill:
 
 - `skills/darf/SKILL.md`
 - `skills/darf/references/`
-- `commands/darf.md`
 
-项目内 MCP server：
+MCP server:
 
 - `integrations/darf_mcp/server.py`
 - `integrations/darf_mcp/challenger/`
 - `integrations/darf_mcp/data/`
 - `integrations/darf_mcp/jobs/`
 - `integrations/darf_mcp/lessons/`
+- `integrations/darf_mcp/persistence/`
 - `integrations/darf_mcp/verify/`
 - `integrations/darf_mcp/config.py`
 
-已经确认的行为：
+Confirmed behavior:
 
-- `review_blind_brief` builds a blind-review prompt and calls Codex as challenger.
-- `CodexBackend` uses `codex exec`, `--ephemeral`, `--sandbox read-only`, a temporary cwd, retry logic, JSON extraction, and metrics.
-- `ClaudeAgentBackend` is a fallback path that writes a prompt file for independent Claude review.
-- DARF 运行时路径已改为环境变量配置，默认写入项目内 `.runtime/darf/`。
+- DARF runtime paths are configurable and default to `.runtime/darf/`.
+- `integrations/darf_mcp/tests` currently passes.
+- `darf-live` can call the DARF `CodexBackend` as a live challenger.
 
 ## CORAX
 
-项目内 skill：
+Skill:
 
 - `skills/corax/SKILL.md`
 - `skills/corax/references/`
 - `skills/corax/schemas/`
-- `commands/corax.md`
 
-项目内 MCP server：
+MCP server:
 
 - `integrations/corax_mcp/server.py`
-- `integrations/corax_mcp/producer/codex_exec.py`
-- `integrations/corax_mcp/reviewer/codex_santa.py`
-- `integrations/corax_mcp/workspace/brief_stripper.py`
+- `integrations/corax_mcp/producer/`
+- `integrations/corax_mcp/reviewer/`
+- `integrations/corax_mcp/sentinel/`
+- `integrations/corax_mcp/workspace/`
 - `integrations/corax_mcp/data/`
-- `integrations/corax_mcp/verify/`
+- `integrations/corax_mcp/ops/`
 - `integrations/corax_mcp/mutation/`
+- `integrations/corax_mcp/verify/`
 - `integrations/corax_mcp/config.py`
 
-已经确认的行为：
+Confirmed behavior:
 
-- CORAX is organized around Codex Producer, independent Codex Reviewer, and Claude Sentinel.
-- Reviewer uses a Santa Method setup with `codex exec --ephemeral --sandbox read-only` and a temporary cwd.
-- `brief_stripper.py` removes conclusion-like paragraphs to create a blind brief.
-- Sentinel is documented as a meta-reviewer for groupthink and same-model blind spots.
-- CORAX 运行时路径已改为环境变量配置，默认写入项目内 `.runtime/corax/` 和 `.runtime/shared/`。
+- CORAX runtime paths are configurable and default to `.runtime/corax/` and `.runtime/shared/`.
+- `corax-live` can call a live Codex reviewer from the benchmark CLI.
+- `--sentinel-summary` can run a Claude Sentinel meta-review over the final evaluation summary.
 
-## 还需要确认或补齐
+## Remaining Alignment Work
 
-- CORAX 文档和 producer 实现需要再对齐，之后才能作为最终架构依据。
-- CORAX producer / reviewer subprocess wrapper 还需要更直接的测试。
-- 项目里最好继续补 adapter 和 schema 抽象，把 benchmark scaffold 与 MCP 工具真正接起来。
-- shared lesson DB 和本地配置文件不要提交，运行时只写 `.runtime/`。
+- Expand CORAX MCP tests to match DARF MCP coverage.
+- Add direct tests for CORAX producer/reviewer subprocess wrappers.
+- Improve benchmark-to-MCP schema validation and cost tracking.
+- Keep shared lesson DBs and local runtime files out of normal commits unless they are curated evidence artifacts.
