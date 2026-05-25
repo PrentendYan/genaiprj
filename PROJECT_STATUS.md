@@ -48,13 +48,21 @@ python -m pytest tests
 已验证结果：
 
 - benchmark tests：22 passed。
-- CORAX offline adapter on 45 current cases：precision 0.9459、recall 0.9722、F1 0.9589。
-- DARF adapter CLI：可运行。
-- CORAX adapter CLI：可运行。
-- CORAX live adapter：已用 `gpt-5.4-mini` 跑通 `btc_future_return_feature`，能返回 structured verdict 并保存 run artifact。
-- DARF live adapter：已接入 CLI 和 mock tests；真实调用需要本机 Codex Desktop bundled CLI 可用。
-- Claude Sentinel summary wrapper：已接入 CLI 和 mock tests；真实调用需要本机 Claude CLI 可用并已登录。
 - DARF MCP tests：103 passed。
+- 五个 adapter 已在完整 45 个 case 上完成评估，90 次 live 模型调用零失败，每个 case 都返回可解析的 verdict。
+
+| Adapter | Mode | Precision | Recall | F1 | FP | FN |
+|---|---|---:|---:|---:|---:|---:|
+| `single_llm_baseline` | offline | 1.0000 | 0.5556 | 0.7143 | 0 | 16 |
+| `darf` | offline | 0.9459 | 0.9722 | 0.9589 | 2 | 1 |
+| `corax` | offline | 0.9459 | 0.9722 | 0.9589 | 2 | 1 |
+| `corax-live` | live | 0.9722 | 0.9722 | 0.9722 | 1 | 1 |
+| `darf-live` | live | 0.8182 | 1.0000 | 0.9000 | 8 | 0 |
+
+- offline `darf` 与 `corax` 在本 case set 上操作等价（共用确定性 normalization scan）。
+- `corax-live` F1 最高；`darf-live` recall 达到 1.0。
+- Claude Sentinel summary wrapper：已接入 CLI 和 mock tests；真实调用需要本机 Claude CLI 可用并已登录。
+- 完整结果分析见 `reports/primary_report.md`。
 
 ## 当前包含哪些逻辑
 
@@ -97,9 +105,8 @@ python -m pytest tests
 - 当前 45 个 case 已包含一个 BTC 真实数据 fixture、一个 QuoteMedia 股票样本和两个真实 notebook workflow artifacts。
 - 后续还可以继续加入更多真实数据集、真实 notebook/script 或真实 report excerpt。
 - CORAX MCP 还没有像 DARF 那样完整的测试套件。
-- Claude Sentinel 已有最小 Python wrapper，但只覆盖 final summary meta-review，还没有做 phase-level gate integration。
-- DARF live challenger 已接到 benchmark CLI，但还需要真实模型 smoke test 记录。
-- CORAX live reviewer 已经接到 benchmark CLI，但还需要更多真实 case 和失败模式测试。
+- Claude Sentinel 已有最小 Python wrapper，但只覆盖 final summary meta-review，还没有做 phase-level gate integration；真实 Claude CLI smoke test 也尚未记录。
+- `darf-live` 和 `corax-live` 已完成完整 45-case live 评估；benchmark 的 live 路径只覆盖单轮 reviewer / challenger，完整对抗编排（blind brief 剥离工序、Sentinel、mutation ladder）尚未纳入评估。
 - lessons DB migration 还需要整理成项目内脚本。
 - raw agent output、cost、latency、failure case 已有基本保存路径，但 cost estimate 和更细的 schema validation 还需要完善。
 

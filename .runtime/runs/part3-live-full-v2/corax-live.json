@@ -1,0 +1,2520 @@
+[
+  {
+    "adapter": "corax-live",
+    "model": "gpt-5.4-mini",
+    "run_dir": ".runtime\\runs\\part3-live-full-v2",
+    "precision": 0.9722,
+    "recall": 0.9722,
+    "f1": 0.9722,
+    "true_positive": 35,
+    "false_positive": 1,
+    "false_negative": 1,
+    "failure_count": 0,
+    "total_latency_ms": 247225,
+    "total_cost_usd": null,
+    "per_case": [
+      {
+        "case_id": "btc_future_return_feature",
+        "expected": [
+          "lookahead"
+        ],
+        "predicted": [
+          "lookahead"
+        ],
+        "findings": [
+          {
+            "issue": "lookahead",
+            "severity": "critical",
+            "evidence": "`df['future_return'] = ...shift(-1)` creates a future-based feature, and `features = ['future_return', 'volume_usd']` passes it into `model.fit(...)`."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "btc_future_return_feature",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3825,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "lookahead",
+                  "severity": "critical",
+                  "evidence": "`df['future_return'] = ...shift(-1)` creates a future-based feature, and `features = ['future_return', 'volume_usd']` passes it into `model.fit(...)`."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "The column name could be misleading and the author may have intended `future_return` to be the label rather than an input feature, but the shown code uses it as a feature."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"lookahead\",\"severity\":\"critical\",\"evidence\":\"`df['future_return'] = ...shift(-1)` creates a future-based feature, and `features = ['future_return', 'volume_usd']` passes it into `model.fit(...)`.\"}],\"confidence\":0.99,\"counter_arguments\":[\"The column name could be misleading and the author may have intended `future_return` to be the label rather than an input feature, but the shown code uses it as a feature.\"]}\n",
+            "latency_ms": 3781,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "lookahead",
+                "severity": "critical",
+                "evidence": "`df['future_return'] = ...shift(-1)` creates a future-based feature, and `features = ['future_return', 'volume_usd']` passes it into `model.fit(...)`."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "The column name could be misleading and the author may have intended `future_return` to be the label rather than an input feature, but the shown code uses it as a feature."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\btc_future_return_feature.json"
+        }
+      },
+      {
+        "case_id": "btc_next_return_feature",
+        "expected": [
+          "lookahead"
+        ],
+        "predicted": [
+          "lookahead"
+        ],
+        "findings": [
+          {
+            "issue": "lookahead",
+            "severity": "critical",
+            "evidence": "`df['next_return'] = df['close_usd'].pct_change().shift(-1)` creates a future-return feature, and `X = df[['next_return', 'market_cap_usd']]` includes it in the inputs."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "btc_next_return_feature",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4492,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "lookahead",
+                  "severity": "critical",
+                  "evidence": "`df['next_return'] = df['close_usd'].pct_change().shift(-1)` creates a future-return feature, and `X = df[['next_return', 'market_cap_usd']]` includes it in the inputs."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If `next_return` were intentionally used as a label or post-trade analysis field rather than an input feature, the leakage concern would not apply."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"lookahead\",\"severity\":\"critical\",\"evidence\":\"`df['next_return'] = df['close_usd'].pct_change().shift(-1)` creates a future-return feature, and `X = df[['next_return', 'market_cap_usd']]` includes it in the inputs.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If `next_return` were intentionally used as a label or post-trade analysis field rather than an input feature, the leakage concern would not apply.\"]}\n",
+            "latency_ms": 4381,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "lookahead",
+                "severity": "critical",
+                "evidence": "`df['next_return'] = df['close_usd'].pct_change().shift(-1)` creates a future-return feature, and `X = df[['next_return', 'market_cap_usd']]` includes it in the inputs."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If `next_return` were intentionally used as a label or post-trade analysis field rather than an input feature, the leakage concern would not apply."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\btc_next_return_feature.json"
+        }
+      },
+      {
+        "case_id": "btc_future_volume_signal",
+        "expected": [
+          "lookahead",
+          "missing_costs"
+        ],
+        "predicted": [
+          "lookahead"
+        ],
+        "findings": [
+          {
+            "issue": "lookahead",
+            "severity": "critical",
+            "evidence": "`df['future_volume_change'] = df['volume_usd'].pct_change().shift(-1)` uses a negative shift, so the signal is built from next period volume."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "btc_future_volume_signal",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3438,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "lookahead",
+                  "severity": "critical",
+                  "evidence": "`df['future_volume_change'] = df['volume_usd'].pct_change().shift(-1)` uses a negative shift, so the signal is built from next period volume."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "This could be an intentionally illustrative example rather than a production backtest."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"lookahead\",\"severity\":\"critical\",\"evidence\":\"`df['future_volume_change'] = df['volume_usd'].pct_change().shift(-1)` uses a negative shift, so the signal is built from next period volume.\"}],\"confidence\":0.99,\"counter_arguments\":[\"This could be an intentionally illustrative example rather than a production backtest.\"]}\n",
+            "latency_ms": 3329,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "lookahead",
+                "severity": "critical",
+                "evidence": "`df['future_volume_change'] = df['volume_usd'].pct_change().shift(-1)` uses a negative shift, so the signal is built from next period volume."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "This could be an intentionally illustrative example rather than a production backtest."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\btc_future_volume_signal.json"
+        }
+      },
+      {
+        "case_id": "btc_label_feature_alignment_error",
+        "expected": [
+          "lookahead"
+        ],
+        "predicted": [
+          "lookahead"
+        ],
+        "findings": [
+          {
+            "issue": "lookahead",
+            "severity": "critical",
+            "evidence": "`future_ret = df['close_usd'].pct_change().shift(-1)` creates a next-period return, and `future_ret` is then included in `features`, so the model is trained on future information."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "btc_label_feature_alignment_error",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 5189,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "lookahead",
+                  "severity": "critical",
+                  "evidence": "`future_ret = df['close_usd'].pct_change().shift(-1)` creates a next-period return, and `future_ret` is then included in `features`, so the model is trained on future information."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If `future_ret` were intended only as an intermediate label and excluded from the actual model matrix, the leakage would not apply."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"lookahead\",\"severity\":\"critical\",\"evidence\":\"`future_ret = df['close_usd'].pct_change().shift(-1)` creates a next-period return, and `future_ret` is then included in `features`, so the model is trained on future information.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If `future_ret` were intended only as an intermediate label and excluded from the actual model matrix, the leakage would not apply.\"]}\n",
+            "latency_ms": 5051,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "lookahead",
+                "severity": "critical",
+                "evidence": "`future_ret = df['close_usd'].pct_change().shift(-1)` creates a next-period return, and `future_ret` is then included in `features`, so the model is trained on future information."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If `future_ret` were intended only as an intermediate label and excluded from the actual model matrix, the leakage would not apply."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\btc_label_feature_alignment_error.json"
+        }
+      },
+      {
+        "case_id": "global_zscore_before_split",
+        "expected": [
+          "normalization_leakage"
+        ],
+        "predicted": [
+          "normalization_leakage"
+        ],
+        "findings": [
+          {
+            "issue": "normalization_leakage",
+            "severity": "critical",
+            "evidence": "`df['z_volume'] = (df['volume_usd'] - df['volume_usd'].mean()) / df['volume_usd'].std()` computes mean/std on the full dataframe before `train`/`test` split."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "global_zscore_before_split",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4072,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "normalization_leakage",
+                  "severity": "critical",
+                  "evidence": "`df['z_volume'] = (df['volume_usd'] - df['volume_usd'].mean()) / df['volume_usd'].std()` computes mean/std on the full dataframe before `train`/`test` split."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "The dataframe might already contain only training-period rows, so the full-sample statistics would not leak future information."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"normalization_leakage\",\"severity\":\"critical\",\"evidence\":\"`df['z_volume'] = (df['volume_usd'] - df['volume_usd'].mean()) / df['volume_usd'].std()` computes mean/std on the full dataframe before `train`/`test` split.\"}],\"confidence\":0.99,\"counter_arguments\":[\"The dataframe might already contain only training-period rows, so the full-sample statistics would not leak future information.\"]}\n",
+            "latency_ms": 3944,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "normalization_leakage",
+                "severity": "critical",
+                "evidence": "`df['z_volume'] = (df['volume_usd'] - df['volume_usd'].mean()) / df['volume_usd'].std()` computes mean/std on the full dataframe before `train`/`test` split."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "The dataframe might already contain only training-period rows, so the full-sample statistics would not leak future information."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\global_zscore_before_split.json"
+        }
+      },
+      {
+        "case_id": "global_standard_scaler_fit_transform",
+        "expected": [
+          "normalization_leakage"
+        ],
+        "predicted": [
+          "normalization_leakage"
+        ],
+        "findings": [
+          {
+            "issue": "normalization_leakage",
+            "severity": "critical",
+            "evidence": "`StandardScaler().fit_transform(df[['close_usd', 'volume_usd']])` fits on the full dataset before `train`/`test` are sliced, so test-period statistics leak into training."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "global_standard_scaler_fit_transform",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3763,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "normalization_leakage",
+                  "severity": "critical",
+                  "evidence": "`StandardScaler().fit_transform(df[['close_usd', 'volume_usd']])` fits on the full dataset before `train`/`test` are sliced, so test-period statistics leak into training."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If `df` already contains only the training window, then the scaler would not have seen future test data."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"normalization_leakage\",\"severity\":\"critical\",\"evidence\":\"`StandardScaler().fit_transform(df[['close_usd', 'volume_usd']])` fits on the full dataset before `train`/`test` are sliced, so test-period statistics leak into training.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If `df` already contains only the training window, then the scaler would not have seen future test data.\"]}\n",
+            "latency_ms": 3648,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "normalization_leakage",
+                "severity": "critical",
+                "evidence": "`StandardScaler().fit_transform(df[['close_usd', 'volume_usd']])` fits on the full dataset before `train`/`test` are sliced, so test-period statistics leak into training."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If `df` already contains only the training window, then the scaler would not have seen future test data."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\global_standard_scaler_fit_transform.json"
+        }
+      },
+      {
+        "case_id": "global_minmax_feature",
+        "expected": [
+          "normalization_leakage"
+        ],
+        "predicted": [
+          "normalization_leakage"
+        ],
+        "findings": [
+          {
+            "issue": "normalization_leakage",
+            "severity": "critical",
+            "evidence": "`df['normalized_close'] = (df['close_usd'] - df['close_usd'].min()) / (df['close_usd'].max() - df['close_usd'].min())` computes min/max on the full dataframe before `train = df.iloc[:6]` and `test = df.iloc[6:]`."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "global_minmax_feature",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4719,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "normalization_leakage",
+                  "severity": "critical",
+                  "evidence": "`df['normalized_close'] = (df['close_usd'] - df['close_usd'].min()) / (df['close_usd'].max() - df['close_usd'].min())` computes min/max on the full dataframe before `train = df.iloc[:6]` and `test = df.iloc[6:]`."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If `df` already contains only the training period and no unseen future rows, then the full-sample extrema would not leak future information."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"normalization_leakage\",\"severity\":\"critical\",\"evidence\":\"`df['normalized_close'] = (df['close_usd'] - df['close_usd'].min()) / (df['close_usd'].max() - df['close_usd'].min())` computes min/max on the full dataframe before `train = df.iloc[:6]` and `test = df.iloc[6:]`.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If `df` already contains only the training period and no unseen future rows, then the full-sample extrema would not leak future information.\"]}\n",
+            "latency_ms": 4613,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "normalization_leakage",
+                "severity": "critical",
+                "evidence": "`df['normalized_close'] = (df['close_usd'] - df['close_usd'].min()) / (df['close_usd'].max() - df['close_usd'].min())` computes min/max on the full dataframe before `train = df.iloc[:6]` and `test = df.iloc[6:]`."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If `df` already contains only the training period and no unseen future rows, then the full-sample extrema would not leak future information."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\global_minmax_feature.json"
+        }
+      },
+      {
+        "case_id": "market_cap_zscore_full_sample",
+        "expected": [
+          "normalization_leakage"
+        ],
+        "predicted": [
+          "normalization_leakage"
+        ],
+        "findings": [
+          {
+            "issue": "normalization_leakage",
+            "severity": "critical",
+            "evidence": "`df['z_market_cap'] = (df['market_cap_usd'] - df['market_cap_usd'].mean()) / df['market_cap_usd'].std()` computes scaling statistics on the full dataset before the train/test split."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "market_cap_zscore_full_sample",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3913,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "normalization_leakage",
+                  "severity": "critical",
+                  "evidence": "`df['z_market_cap'] = (df['market_cap_usd'] - df['market_cap_usd'].mean()) / df['market_cap_usd'].std()` computes scaling statistics on the full dataset before the train/test split."
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "If `z_market_cap` is never used as a model feature and is only for descriptive analysis, the leakage would not affect evaluation."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"normalization_leakage\",\"severity\":\"critical\",\"evidence\":\"`df['z_market_cap'] = (df['market_cap_usd'] - df['market_cap_usd'].mean()) / df['market_cap_usd'].std()` computes scaling statistics on the full dataset before the train/test split.\"}],\"confidence\":0.98,\"counter_arguments\":[\"If `z_market_cap` is never used as a model feature and is only for descriptive analysis, the leakage would not affect evaluation.\"]}\n",
+            "latency_ms": 3804,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "normalization_leakage",
+                "severity": "critical",
+                "evidence": "`df['z_market_cap'] = (df['market_cap_usd'] - df['market_cap_usd'].mean()) / df['market_cap_usd'].std()` computes scaling statistics on the full dataset before the train/test split."
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "If `z_market_cap` is never used as a model feature and is only for descriptive analysis, the leakage would not affect evaluation."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\market_cap_zscore_full_sample.json"
+        }
+      },
+      {
+        "case_id": "random_split_time_series",
+        "expected": [
+          "temporal_split"
+        ],
+        "predicted": [
+          "temporal_split"
+        ],
+        "findings": [
+          {
+            "issue": "temporal_split",
+            "severity": "critical",
+            "evidence": "`train_test_split(df, test_size=0.25, shuffle=True, random_state=7)` randomly shuffles a financial time series before splitting."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "random_split_time_series",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3115,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "temporal_split",
+                  "severity": "critical",
+                  "evidence": "`train_test_split(df, test_size=0.25, shuffle=True, random_state=7)` randomly shuffles a financial time series before splitting."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If `df` was not time-ordered time-series data, shuffling would not violate the evaluation protocol."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"temporal_split\",\"severity\":\"critical\",\"evidence\":\"`train_test_split(df, test_size=0.25, shuffle=True, random_state=7)` randomly shuffles a financial time series before splitting.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If `df` was not time-ordered time-series data, shuffling would not violate the evaluation protocol.\"]}\n",
+            "latency_ms": 3002,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "temporal_split",
+                "severity": "critical",
+                "evidence": "`train_test_split(df, test_size=0.25, shuffle=True, random_state=7)` randomly shuffles a financial time series before splitting."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If `df` was not time-ordered time-series data, shuffling would not violate the evaluation protocol."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\random_split_time_series.json"
+        }
+      },
+      {
+        "case_id": "random_split_after_sort",
+        "expected": [
+          "temporal_split"
+        ],
+        "predicted": [
+          "temporal_split"
+        ],
+        "findings": [
+          {
+            "issue": "temporal_split",
+            "severity": "critical",
+            "evidence": "`df = df.sort_values('date')` is immediately followed by `train_test_split(..., shuffle=True)`, which randomly mixes past and future rows instead of preserving chronology."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "random_split_after_sort",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4057,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "temporal_split",
+                  "severity": "critical",
+                  "evidence": "`df = df.sort_values('date')` is immediately followed by `train_test_split(..., shuffle=True)`, which randomly mixes past and future rows instead of preserving chronology."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If the rows are not actually used as a time series and `date` is just a sorting convenience, a shuffled split may be acceptable."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"temporal_split\",\"severity\":\"critical\",\"evidence\":\"`df = df.sort_values('date')` is immediately followed by `train_test_split(..., shuffle=True)`, which randomly mixes past and future rows instead of preserving chronology.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If the rows are not actually used as a time series and `date` is just a sorting convenience, a shuffled split may be acceptable.\"]}\n",
+            "latency_ms": 3952,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "temporal_split",
+                "severity": "critical",
+                "evidence": "`df = df.sort_values('date')` is immediately followed by `train_test_split(..., shuffle=True)`, which randomly mixes past and future rows instead of preserving chronology."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If the rows are not actually used as a time series and `date` is just a sorting convenience, a shuffled split may be acceptable."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\random_split_after_sort.json"
+        }
+      },
+      {
+        "case_id": "random_split_return_prediction",
+        "expected": [
+          "temporal_split"
+        ],
+        "predicted": [
+          "temporal_split"
+        ],
+        "findings": [
+          {
+            "issue": "temporal_split",
+            "severity": "critical",
+            "evidence": "`train_test_split(..., shuffle=True, random_state=42)` randomly mixes time-series rows instead of preserving chronology."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "random_split_return_prediction",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4913,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "temporal_split",
+                  "severity": "critical",
+                  "evidence": "`train_test_split(..., shuffle=True, random_state=42)` randomly mixes time-series rows instead of preserving chronology."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If the rows were already independently sampled and not time-ordered, shuffling would not create a temporal leakage issue."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"temporal_split\",\"severity\":\"critical\",\"evidence\":\"`train_test_split(..., shuffle=True, random_state=42)` randomly mixes time-series rows instead of preserving chronology.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If the rows were already independently sampled and not time-ordered, shuffling would not create a temporal leakage issue.\"]}\n",
+            "latency_ms": 4807,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "temporal_split",
+                "severity": "critical",
+                "evidence": "`train_test_split(..., shuffle=True, random_state=42)` randomly mixes time-series rows instead of preserving chronology."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If the rows were already independently sampled and not time-ordered, shuffling would not create a temporal leakage issue."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\random_split_return_prediction.json"
+        }
+      },
+      {
+        "case_id": "random_split_backtest_evaluation",
+        "expected": [
+          "temporal_split"
+        ],
+        "predicted": [
+          "temporal_split"
+        ],
+        "findings": [
+          {
+            "issue": "temporal_split",
+            "severity": "critical",
+            "evidence": "`train_test_split(df, test_size=0.2, shuffle=True)` randomly shuffles time-indexed rows before evaluation."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "random_split_backtest_evaluation",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3411,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "temporal_split",
+                  "severity": "critical",
+                  "evidence": "`train_test_split(df, test_size=0.2, shuffle=True)` randomly shuffles time-indexed rows before evaluation."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If `evaluate_strategy` internally reorders rows chronologically and ignores the random split, the issue would be less severe, but the shown split is still inappropriate for time-series validation."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"temporal_split\",\"severity\":\"critical\",\"evidence\":\"`train_test_split(df, test_size=0.2, shuffle=True)` randomly shuffles time-indexed rows before evaluation.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If `evaluate_strategy` internally reorders rows chronologically and ignores the random split, the issue would be less severe, but the shown split is still inappropriate for time-series validation.\"]}\n",
+            "latency_ms": 3296,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "temporal_split",
+                "severity": "critical",
+                "evidence": "`train_test_split(df, test_size=0.2, shuffle=True)` randomly shuffles time-indexed rows before evaluation."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If `evaluate_strategy` internally reorders rows chronologically and ignores the random split, the issue would be less severe, but the shown split is still inappropriate for time-series validation."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\random_split_backtest_evaluation.json"
+        }
+      },
+      {
+        "case_id": "missing_transaction_costs",
+        "expected": [
+          "missing_costs"
+        ],
+        "predicted": [
+          "missing_costs"
+        ],
+        "findings": [
+          {
+            "issue": "missing_costs",
+            "severity": "medium",
+            "evidence": "`strategy_return` is computed directly from price changes and `sharpe` is reported, but there is no fee, slippage, commission, or turnover deduction anywhere in the backtest."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "missing_transaction_costs",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 5194,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "missing_costs",
+                  "severity": "medium",
+                  "evidence": "`strategy_return` is computed directly from price changes and `sharpe` is reported, but there is no fee, slippage, commission, or turnover deduction anywhere in the backtest."
+                }
+              ],
+              "confidence": 0.97,
+              "counter_arguments": [
+                "This may be only a minimal code snippet, with costs handled in an omitted part of the full backtest pipeline."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"missing_costs\",\"severity\":\"medium\",\"evidence\":\"`strategy_return` is computed directly from price changes and `sharpe` is reported, but there is no fee, slippage, commission, or turnover deduction anywhere in the backtest.\"}],\"confidence\":0.97,\"counter_arguments\":[\"This may be only a minimal code snippet, with costs handled in an omitted part of the full backtest pipeline.\"]}\n",
+            "latency_ms": 5084,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "missing_costs",
+                "severity": "medium",
+                "evidence": "`strategy_return` is computed directly from price changes and `sharpe` is reported, but there is no fee, slippage, commission, or turnover deduction anywhere in the backtest."
+              }
+            ],
+            "confidence": 0.97,
+            "counter_arguments": [
+              "This may be only a minimal code snippet, with costs handled in an omitted part of the full backtest pipeline."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\missing_transaction_costs.json"
+        }
+      },
+      {
+        "case_id": "gross_momentum_no_slippage",
+        "expected": [
+          "missing_costs"
+        ],
+        "predicted": [
+          "missing_costs"
+        ],
+        "findings": [
+          {
+            "issue": "missing_costs",
+            "severity": "critical",
+            "evidence": "`strategy_return = df['signal'] * df['close_usd'].pct_change()` and `sharpe = ... df['strategy_return'] ...` compute gross returns only; no fees, slippage, turnover, or commissions are included."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "gross_momentum_no_slippage",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4839,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "missing_costs",
+                  "severity": "critical",
+                  "evidence": "`strategy_return = df['signal'] * df['close_usd'].pct_change()` and `sharpe = ... df['strategy_return'] ...` compute gross returns only; no fees, slippage, turnover, or commissions are included."
+                }
+              ],
+              "confidence": 0.96,
+              "counter_arguments": [
+                "This is only a code snippet, not a full backtest report, so transaction costs may be handled elsewhere.",
+                "The strategy is long-only with a binary signal, so the omitted frictions may be small in some settings."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"missing_costs\",\"severity\":\"critical\",\"evidence\":\"`strategy_return = df['signal'] * df['close_usd'].pct_change()` and `sharpe = ... df['strategy_return'] ...` compute gross returns only; no fees, slippage, turnover, or commissions are included.\"}],\"confidence\":0.96,\"counter_arguments\":[\"This is only a code snippet, not a full backtest report, so transaction costs may be handled elsewhere.\",\"The strategy is long-only with a binary signal, so the omitted frictions may be small in some settings.\"]}\n",
+            "latency_ms": 4724,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "missing_costs",
+                "severity": "critical",
+                "evidence": "`strategy_return = df['signal'] * df['close_usd'].pct_change()` and `sharpe = ... df['strategy_return'] ...` compute gross returns only; no fees, slippage, turnover, or commissions are included."
+              }
+            ],
+            "confidence": 0.96,
+            "counter_arguments": [
+              "This is only a code snippet, not a full backtest report, so transaction costs may be handled elsewhere.",
+              "The strategy is long-only with a binary signal, so the omitted frictions may be small in some settings."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\gross_momentum_no_slippage.json"
+        }
+      },
+      {
+        "case_id": "volume_switching_no_costs",
+        "expected": [
+          "missing_costs"
+        ],
+        "predicted": [
+          "missing_costs"
+        ],
+        "findings": [
+          {
+            "issue": "missing_costs",
+            "severity": "critical",
+            "evidence": "`strategy_return = df['signal'].shift(1) * df['close_usd'].pct_change()` reports raw returns only; no fees, slippage, commissions, or turnover costs are included."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "volume_switching_no_costs",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 5469,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "missing_costs",
+                  "severity": "critical",
+                  "evidence": "`strategy_return = df['signal'].shift(1) * df['close_usd'].pct_change()` reports raw returns only; no fees, slippage, commissions, or turnover costs are included."
+                }
+              ],
+              "confidence": 0.97,
+              "counter_arguments": [
+                "Transaction costs may be applied in code not shown in this snippet."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"missing_costs\",\"severity\":\"critical\",\"evidence\":\"`strategy_return = df['signal'].shift(1) * df['close_usd'].pct_change()` reports raw returns only; no fees, slippage, commissions, or turnover costs are included.\"}],\"confidence\":0.97,\"counter_arguments\":[\"Transaction costs may be applied in code not shown in this snippet.\"]}\n",
+            "latency_ms": 5325,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "missing_costs",
+                "severity": "critical",
+                "evidence": "`strategy_return = df['signal'].shift(1) * df['close_usd'].pct_change()` reports raw returns only; no fees, slippage, commissions, or turnover costs are included."
+              }
+            ],
+            "confidence": 0.97,
+            "counter_arguments": [
+              "Transaction costs may be applied in code not shown in this snippet."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\volume_switching_no_costs.json"
+        }
+      },
+      {
+        "case_id": "cost_variable_declared_not_applied",
+        "expected": [
+          "missing_costs"
+        ],
+        "predicted": [
+          "missing_costs"
+        ],
+        "findings": [
+          {
+            "issue": "missing_costs",
+            "severity": "high",
+            "evidence": "`transaction_cost_bps = 10` is declared, but `strategy_return` only uses `position * pct_change()` and never subtracts fees, slippage, or commissions."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "cost_variable_declared_not_applied",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 5126,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "missing_costs",
+                  "severity": "high",
+                  "evidence": "`transaction_cost_bps = 10` is declared, but `strategy_return` only uses `position * pct_change()` and never subtracts fees, slippage, or commissions."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "The cost adjustment may be applied in code not shown in this excerpt, so this snippet alone cannot prove the full backtest omits costs."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"missing_costs\",\"severity\":\"high\",\"evidence\":\"`transaction_cost_bps = 10` is declared, but `strategy_return` only uses `position * pct_change()` and never subtracts fees, slippage, or commissions.\"}],\"confidence\":0.99,\"counter_arguments\":[\"The cost adjustment may be applied in code not shown in this excerpt, so this snippet alone cannot prove the full backtest omits costs.\"]}\n",
+            "latency_ms": 5086,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "missing_costs",
+                "severity": "high",
+                "evidence": "`transaction_cost_bps = 10` is declared, but `strategy_return` only uses `position * pct_change()` and never subtracts fees, slippage, or commissions."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "The cost adjustment may be applied in code not shown in this excerpt, so this snippet alone cannot prove the full backtest omits costs."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\cost_variable_declared_not_applied.json"
+        }
+      },
+      {
+        "case_id": "unsupported_claim",
+        "expected": [
+          "unsupported_claim"
+        ],
+        "predicted": [
+          "unsupported_claim"
+        ],
+        "findings": [
+          {
+            "issue": "unsupported_claim",
+            "severity": "medium",
+            "evidence": "Claims the strategy is 'clearly state-of-the-art and beats all alternatives' while explicitly omitting baseline comparisons and relying only on a visually compelling equity curve."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "unsupported_claim",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3592,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "unsupported_claim",
+                  "severity": "medium",
+                  "evidence": "Claims the strategy is 'clearly state-of-the-art and beats all alternatives' while explicitly omitting baseline comparisons and relying only on a visually compelling equity curve."
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "A baseline comparison may exist in omitted supplementary material, but it is not present in the submitted artifact."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"unsupported_claim\",\"severity\":\"medium\",\"evidence\":\"Claims the strategy is 'clearly state-of-the-art and beats all alternatives' while explicitly omitting baseline comparisons and relying only on a visually compelling equity curve.\"}],\"confidence\":0.98,\"counter_arguments\":[\"A baseline comparison may exist in omitted supplementary material, but it is not present in the submitted artifact.\"]}\n",
+            "latency_ms": 3550,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "unsupported_claim",
+                "severity": "medium",
+                "evidence": "Claims the strategy is 'clearly state-of-the-art and beats all alternatives' while explicitly omitting baseline comparisons and relying only on a visually compelling equity curve."
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "A baseline comparison may exist in omitted supplementary material, but it is not present in the submitted artifact."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\unsupported_claim.json"
+        }
+      },
+      {
+        "case_id": "unsupported_visual_claim",
+        "expected": [
+          "unsupported_claim"
+        ],
+        "predicted": [
+          "unsupported_claim"
+        ],
+        "findings": [
+          {
+            "issue": "unsupported_claim",
+            "severity": "critical",
+            "evidence": "\"The chart clearly shows this BTC timing model outperforming buy-and-hold. No baseline table is included because the visual evidence is enough.\""
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "unsupported_visual_claim",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3792,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "unsupported_claim",
+                  "severity": "critical",
+                  "evidence": "\"The chart clearly shows this BTC timing model outperforming buy-and-hold. No baseline table is included because the visual evidence is enough.\""
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "The omitted chart or accompanying material might include a valid buy-and-hold baseline even though it is not present in the submitted text."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"unsupported_claim\",\"severity\":\"critical\",\"evidence\":\"\\\"The chart clearly shows this BTC timing model outperforming buy-and-hold. No baseline table is included because the visual evidence is enough.\\\"\"}],\"confidence\":0.98,\"counter_arguments\":[\"The omitted chart or accompanying material might include a valid buy-and-hold baseline even though it is not present in the submitted text.\"]}\n",
+            "latency_ms": 3687,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "unsupported_claim",
+                "severity": "critical",
+                "evidence": "\"The chart clearly shows this BTC timing model outperforming buy-and-hold. No baseline table is included because the visual evidence is enough.\""
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "The omitted chart or accompanying material might include a valid buy-and-hold baseline even though it is not present in the submitted text."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\unsupported_visual_claim.json"
+        }
+      },
+      {
+        "case_id": "unsupported_small_sample_claim",
+        "expected": [
+          "unsupported_claim"
+        ],
+        "predicted": [
+          "unsupported_claim"
+        ],
+        "findings": [
+          {
+            "issue": "unsupported_claim",
+            "severity": "critical",
+            "evidence": "\"proves the strategy will beat all alternatives in live trading\" with \"We report no baseline and no robustness checks.\""
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "unsupported_small_sample_claim",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 2958,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "unsupported_claim",
+                  "severity": "critical",
+                  "evidence": "\"proves the strategy will beat all alternatives in live trading\" with \"We report no baseline and no robustness checks.\""
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "The statement may be informal marketing language rather than a formal performance claim."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"unsupported_claim\",\"severity\":\"critical\",\"evidence\":\"\\\"proves the strategy will beat all alternatives in live trading\\\" with \\\"We report no baseline and no robustness checks.\\\"\"}],\"confidence\":0.98,\"counter_arguments\":[\"The statement may be informal marketing language rather than a formal performance claim.\"]}\n",
+            "latency_ms": 2852,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "unsupported_claim",
+                "severity": "critical",
+                "evidence": "\"proves the strategy will beat all alternatives in live trading\" with \"We report no baseline and no robustness checks.\""
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "The statement may be informal marketing language rather than a formal performance claim."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\unsupported_small_sample_claim.json"
+        }
+      },
+      {
+        "case_id": "honest_shifted_momentum",
+        "expected": [],
+        "predicted": [],
+        "findings": [],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "honest_shifted_momentum",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4760,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "PASS",
+              "issues": [],
+              "confidence": 0.93,
+              "counter_arguments": [
+                "The cost model is simplified: it applies a fixed 0.1% turnover charge and does not separately model slippage or exchange commissions."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"PASS\",\"issues\":[],\"confidence\":0.93,\"counter_arguments\":[\"The cost model is simplified: it applies a fixed 0.1% turnover charge and does not separately model slippage or exchange commissions.\"]}\n",
+            "latency_ms": 4650,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "PASS",
+            "issues": [],
+            "confidence": 0.93,
+            "counter_arguments": [
+              "The cost model is simplified: it applies a fixed 0.1% turnover charge and does not separately model slippage or exchange commissions."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\honest_shifted_momentum.json"
+        }
+      },
+      {
+        "case_id": "walk_forward_scaler_clean",
+        "expected": [],
+        "predicted": [],
+        "findings": [],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "walk_forward_scaler_clean",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 6707,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "PASS",
+              "issues": [],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "The snippet is self-contained and shows the scaler fitted only on the training window; any leakage would have to come from preprocessing not shown here."
+              ]
+            },
+            "raw_output": "{\n  \"verdict\": \"PASS\",\n  \"issues\": [],\n  \"confidence\": 0.98,\n  \"counter_arguments\": [\n    \"The snippet is self-contained and shows the scaler fitted only on the training window; any leakage would have to come from preprocessing not shown here.\"\n  ]\n}\n",
+            "latency_ms": 6666,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "PASS",
+            "issues": [],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "The snippet is self-contained and shows the scaler fitted only on the training window; any leakage would have to come from preprocessing not shown here."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\walk_forward_scaler_clean.json"
+        }
+      },
+      {
+        "case_id": "chronological_split_clean",
+        "expected": [],
+        "predicted": [],
+        "findings": [],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "chronological_split_clean",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4473,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "PASS",
+              "issues": [],
+              "confidence": 0.96,
+              "counter_arguments": [
+                "The snippet is incomplete, so a hidden preprocessing step or evaluation block could still introduce leakage or unsupported claims outside the shown code."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"PASS\",\"issues\":[],\"confidence\":0.96,\"counter_arguments\":[\"The snippet is incomplete, so a hidden preprocessing step or evaluation block could still introduce leakage or unsupported claims outside the shown code.\"]}\n",
+            "latency_ms": 4369,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "PASS",
+            "issues": [],
+            "confidence": 0.96,
+            "counter_arguments": [
+              "The snippet is incomplete, so a hidden preprocessing step or evaluation block could still introduce leakage or unsupported claims outside the shown code."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\chronological_split_clean.json"
+        }
+      },
+      {
+        "case_id": "buy_and_hold_report_clean",
+        "expected": [],
+        "predicted": [],
+        "findings": [],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "buy_and_hold_report_clean",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3189,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "PASS",
+              "issues": [],
+              "confidence": 0.94,
+              "counter_arguments": [
+                "The submitted artifact is only a short summary, so a missing-costs or unsupported-claim issue could exist in the underlying report but is not visible here."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"PASS\",\"issues\":[],\"confidence\":0.94,\"counter_arguments\":[\"The submitted artifact is only a short summary, so a missing-costs or unsupported-claim issue could exist in the underlying report but is not visible here.\"]}\n",
+            "latency_ms": 3079,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "PASS",
+            "issues": [],
+            "confidence": 0.94,
+            "counter_arguments": [
+              "The submitted artifact is only a short summary, so a missing-costs or unsupported-claim issue could exist in the underlying report but is not visible here."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\buy_and_hold_report_clean.json"
+        }
+      },
+      {
+        "case_id": "cost_adjusted_rebalance_clean",
+        "expected": [],
+        "predicted": [],
+        "findings": [],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "cost_adjusted_rebalance_clean",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 6231,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "PASS",
+              "issues": [],
+              "confidence": 0.92,
+              "counter_arguments": [
+                "The turnover penalty is only a proxy, so a stricter reviewer could still argue that explicit commissions or slippage assumptions are missing, but the artifact does include a cost term."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"PASS\",\"issues\":[],\"confidence\":0.92,\"counter_arguments\":[\"The turnover penalty is only a proxy, so a stricter reviewer could still argue that explicit commissions or slippage assumptions are missing, but the artifact does include a cost term.\"]}\n",
+            "latency_ms": 6123,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "PASS",
+            "issues": [],
+            "confidence": 0.92,
+            "counter_arguments": [
+              "The turnover penalty is only a proxy, so a stricter reviewer could still argue that explicit commissions or slippage assumptions are missing, but the artifact does include a cost term."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\cost_adjusted_rebalance_clean.json"
+        }
+      },
+      {
+        "case_id": "notebook_vectorized_lagged_signal_clean",
+        "expected": [],
+        "predicted": [],
+        "findings": [],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "notebook_vectorized_lagged_signal_clean",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 5889,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "PASS",
+              "issues": [],
+              "confidence": 0.86,
+              "counter_arguments": [
+                "The snippet only shows return calculation; the notebook may omit transaction costs later even though they are not visible here."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"PASS\",\"issues\":[],\"confidence\":0.86,\"counter_arguments\":[\"The snippet only shows return calculation; the notebook may omit transaction costs later even though they are not visible here.\"]}\n",
+            "latency_ms": 5775,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "PASS",
+            "issues": [],
+            "confidence": 0.86,
+            "counter_arguments": [
+              "The snippet only shows return calculation; the notebook may omit transaction costs later even though they are not visible here."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\notebook_vectorized_lagged_signal_clean.json"
+        }
+      },
+      {
+        "case_id": "notebook_vectorized_vol_target_clean",
+        "expected": [],
+        "predicted": [],
+        "findings": [],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "notebook_vectorized_vol_target_clean",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 6197,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "PASS",
+              "issues": [],
+              "confidence": 0.92,
+              "counter_arguments": [
+                "The 22-day rolling volatility includes the current day's return, so if the strategy is assumed to trade on the same close there could be a subtle alignment concern."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"PASS\",\"issues\":[],\"confidence\":0.92,\"counter_arguments\":[\"The 22-day rolling volatility includes the current day's return, so if the strategy is assumed to trade on the same close there could be a subtle alignment concern.\"]}\n",
+            "latency_ms": 6089,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "PASS",
+            "issues": [],
+            "confidence": 0.92,
+            "counter_arguments": [
+              "The 22-day rolling volatility includes the current day's return, so if the strategy is assumed to trade on the same close there could be a subtle alignment concern."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\notebook_vectorized_vol_target_clean.json"
+        }
+      },
+      {
+        "case_id": "notebook_vectorized_tearsheet_before_costs",
+        "expected": [
+          "missing_costs"
+        ],
+        "predicted": [
+          "missing_costs"
+        ],
+        "findings": [
+          {
+            "issue": "missing_costs",
+            "severity": "high",
+            "evidence": "`qs.reports.full(returns=strategy_voltgt_returns, benchmark=strategy_returns, ...)` and `sharpe = strategy_voltgt_returns.mean() / strategy_voltgt_returns.std() * np.sqrt(252)` report raw strategy returns/sharpe with no explicit fees, slippage, commissions, or turnover adjustment."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "notebook_vectorized_tearsheet_before_costs",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 15125,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "missing_costs",
+                  "severity": "high",
+                  "evidence": "`qs.reports.full(returns=strategy_voltgt_returns, benchmark=strategy_returns, ...)` and `sharpe = strategy_voltgt_returns.mean() / strategy_voltgt_returns.std() * np.sqrt(252)` report raw strategy returns/sharpe with no explicit fees, slippage, commissions, or turnover adjustment."
+                }
+              ],
+              "confidence": 0.91,
+              "counter_arguments": [
+                "The costs may already be embedded upstream in `strategy_voltgt_returns` or `strategy_returns`, but that is not shown in the cited cell."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"missing_costs\",\"severity\":\"high\",\"evidence\":\"`qs.reports.full(returns=strategy_voltgt_returns, benchmark=strategy_returns, ...)` and `sharpe = strategy_voltgt_returns.mean() / strategy_voltgt_returns.std() * np.sqrt(252)` report raw strategy returns/sharpe with no explicit fees, slippage, commissions, or turnover adjustment.\"}],\"confidence\":0.91,\"counter_arguments\":[\"The costs may already be embedded upstream in `strategy_voltgt_returns` or `strategy_returns`, but that is not shown in the cited cell.\"]}\n",
+            "latency_ms": 15017,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "missing_costs",
+                "severity": "high",
+                "evidence": "`qs.reports.full(returns=strategy_voltgt_returns, benchmark=strategy_returns, ...)` and `sharpe = strategy_voltgt_returns.mean() / strategy_voltgt_returns.std() * np.sqrt(252)` report raw strategy returns/sharpe with no explicit fees, slippage, commissions, or turnover adjustment."
+              }
+            ],
+            "confidence": 0.91,
+            "counter_arguments": [
+              "The costs may already be embedded upstream in `strategy_voltgt_returns` or `strategy_returns`, but that is not shown in the cited cell."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\notebook_vectorized_tearsheet_before_costs.json"
+        }
+      },
+      {
+        "case_id": "notebook_transaction_costs_after_cost_clean",
+        "expected": [],
+        "predicted": [],
+        "findings": [],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "notebook_transaction_costs_after_cost_clean",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4608,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "PASS",
+              "issues": [],
+              "confidence": 0.92,
+              "counter_arguments": [
+                "The excerpt is small; a leakage, split, or unsupported claim issue could exist in surrounding notebook cells not shown here."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"PASS\",\"issues\":[],\"confidence\":0.92,\"counter_arguments\":[\"The excerpt is small; a leakage, split, or unsupported claim issue could exist in surrounding notebook cells not shown here.\"]}\n",
+            "latency_ms": 4496,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "PASS",
+            "issues": [],
+            "confidence": 0.92,
+            "counter_arguments": [
+              "The excerpt is small; a leakage, split, or unsupported claim issue could exist in surrounding notebook cells not shown here."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\notebook_transaction_costs_after_cost_clean.json"
+        }
+      },
+      {
+        "case_id": "notebook_transaction_turnover_alignment_ambiguous",
+        "expected": [],
+        "predicted": [
+          "lookahead"
+        ],
+        "findings": [
+          {
+            "issue": "lookahead",
+            "severity": "critical",
+            "evidence": "`turnover = turnover.shift(-1)` moves the transaction cost to the prior row, which can align an execution cost with data from the next period and create feature/label misalignment."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "notebook_transaction_turnover_alignment_ambiguous",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 6176,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "lookahead",
+                  "severity": "critical",
+                  "evidence": "`turnover = turnover.shift(-1)` moves the transaction cost to the prior row, which can align an execution cost with data from the next period and create feature/label misalignment."
+                }
+              ],
+              "confidence": 0.91,
+              "counter_arguments": [
+                "If `vol_signal` is already lagged and the notebook defines the trade as executing on the following bar, the `shift(-1)` could be an intentional bookkeeping convention rather than lookahead."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"lookahead\",\"severity\":\"critical\",\"evidence\":\"`turnover = turnover.shift(-1)` moves the transaction cost to the prior row, which can align an execution cost with data from the next period and create feature/label misalignment.\"}],\"confidence\":0.91,\"counter_arguments\":[\"If `vol_signal` is already lagged and the notebook defines the trade as executing on the following bar, the `shift(-1)` could be an intentional bookkeeping convention rather than lookahead.\"]}\n",
+            "latency_ms": 6069,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "lookahead",
+                "severity": "critical",
+                "evidence": "`turnover = turnover.shift(-1)` moves the transaction cost to the prior row, which can align an execution cost with data from the next period and create feature/label misalignment."
+              }
+            ],
+            "confidence": 0.91,
+            "counter_arguments": [
+              "If `vol_signal` is already lagged and the notebook defines the trade as executing on the following bar, the `shift(-1)` could be an intentional bookkeeping convention rather than lookahead."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\notebook_transaction_turnover_alignment_ambiguous.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_adjusted_close_momentum_clean",
+        "expected": [],
+        "predicted": [],
+        "findings": [],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_adjusted_close_momentum_clean",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 8288,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "PASS",
+              "issues": [],
+              "confidence": 0.96,
+              "counter_arguments": [
+                "The transaction cost term may still be misaligned with actual execution timing, but it is present, so this is not a missing-costs issue under the stated schema."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"PASS\",\"issues\":[],\"confidence\":0.96,\"counter_arguments\":[\"The transaction cost term may still be misaligned with actual execution timing, but it is present, so this is not a missing-costs issue under the stated schema.\"]}\n",
+            "latency_ms": 8173,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "PASS",
+            "issues": [],
+            "confidence": 0.96,
+            "counter_arguments": [
+              "The transaction cost term may still be misaligned with actual execution timing, but it is present, so this is not a missing-costs issue under the stated schema."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_adjusted_close_momentum_clean.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_future_return_feature",
+        "expected": [
+          "lookahead"
+        ],
+        "predicted": [
+          "lookahead"
+        ],
+        "findings": [
+          {
+            "issue": "lookahead",
+            "severity": "critical",
+            "evidence": "`prices['future_return'] = prices.groupby('ticker')['adj_close'].pct_change().shift(-1)` uses the next row's return as a current feature, which leaks future price information into the model."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_future_return_feature",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 10941,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "lookahead",
+                  "severity": "critical",
+                  "evidence": "`prices['future_return'] = prices.groupby('ticker')['adj_close'].pct_change().shift(-1)` uses the next row's return as a current feature, which leaks future price information into the model."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "The author may have intended `future_return` as a label or diagnostic column rather than an input feature, but it is explicitly included in `features` here."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"lookahead\",\"severity\":\"critical\",\"evidence\":\"`prices['future_return'] = prices.groupby('ticker')['adj_close'].pct_change().shift(-1)` uses the next row's return as a current feature, which leaks future price information into the model.\"}],\"confidence\":0.99,\"counter_arguments\":[\"The author may have intended `future_return` as a label or diagnostic column rather than an input feature, but it is explicitly included in `features` here.\"]}\n",
+            "latency_ms": 10827,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "lookahead",
+                "severity": "critical",
+                "evidence": "`prices['future_return'] = prices.groupby('ticker')['adj_close'].pct_change().shift(-1)` uses the next row's return as a current feature, which leaks future price information into the model."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "The author may have intended `future_return` as a label or diagnostic column rather than an input feature, but it is explicitly included in `features` here."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_future_return_feature.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_global_zscore_before_split",
+        "expected": [
+          "normalization_leakage"
+        ],
+        "predicted": [
+          "normalization_leakage"
+        ],
+        "findings": [
+          {
+            "issue": "normalization_leakage",
+            "severity": "critical",
+            "evidence": "`prices['z_adj_close'] = (prices['adj_close'] - prices['adj_close'].mean()) / prices['adj_close'].std()` computes mean/std on the full sample before `train`/`test` split."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_global_zscore_before_split",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4412,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "normalization_leakage",
+                  "severity": "critical",
+                  "evidence": "`prices['z_adj_close'] = (prices['adj_close'] - prices['adj_close'].mean()) / prices['adj_close'].std()` computes mean/std on the full sample before `train`/`test` split."
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "The normalized column may be used only for visualization or analysis, not as a model feature.",
+                "If `prices` already contains only the training window, the full-sample statistics would not leak future information."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"normalization_leakage\",\"severity\":\"critical\",\"evidence\":\"`prices['z_adj_close'] = (prices['adj_close'] - prices['adj_close'].mean()) / prices['adj_close'].std()` computes mean/std on the full sample before `train`/`test` split.\"}],\"confidence\":0.98,\"counter_arguments\":[\"The normalized column may be used only for visualization or analysis, not as a model feature.\",\"If `prices` already contains only the training window, the full-sample statistics would not leak future information.\"]}\n",
+            "latency_ms": 4303,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "normalization_leakage",
+                "severity": "critical",
+                "evidence": "`prices['z_adj_close'] = (prices['adj_close'] - prices['adj_close'].mean()) / prices['adj_close'].std()` computes mean/std on the full sample before `train`/`test` split."
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "The normalized column may be used only for visualization or analysis, not as a model feature.",
+              "If `prices` already contains only the training window, the full-sample statistics would not leak future information."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_global_zscore_before_split.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_random_split_stocks",
+        "expected": [
+          "temporal_split"
+        ],
+        "predicted": [
+          "temporal_split"
+        ],
+        "findings": [
+          {
+            "issue": "temporal_split",
+            "severity": "critical",
+            "evidence": "`train_test_split(prices, test_size=0.25, shuffle=True, random_state=11)` randomly shuffles a time-ordered stock panel instead of using a chronological split."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_random_split_stocks",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 6154,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "temporal_split",
+                  "severity": "critical",
+                  "evidence": "`train_test_split(prices, test_size=0.25, shuffle=True, random_state=11)` randomly shuffles a time-ordered stock panel instead of using a chronological split."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If the modeling task was explicitly cross-sectional and not time-dependent, a random split could be defensible, but that is not indicated here."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"temporal_split\",\"severity\":\"critical\",\"evidence\":\"`train_test_split(prices, test_size=0.25, shuffle=True, random_state=11)` randomly shuffles a time-ordered stock panel instead of using a chronological split.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If the modeling task was explicitly cross-sectional and not time-dependent, a random split could be defensible, but that is not indicated here.\"]}\n",
+            "latency_ms": 6033,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "temporal_split",
+                "severity": "critical",
+                "evidence": "`train_test_split(prices, test_size=0.25, shuffle=True, random_state=11)` randomly shuffles a time-ordered stock panel instead of using a chronological split."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If the modeling task was explicitly cross-sectional and not time-dependent, a random split could be defensible, but that is not indicated here."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_random_split_stocks.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_gross_stock_strategy_no_costs",
+        "expected": [
+          "missing_costs"
+        ],
+        "predicted": [
+          "missing_costs"
+        ],
+        "findings": [
+          {
+            "issue": "missing_costs",
+            "severity": "high",
+            "evidence": "`strategy_return` and `sharpe` are computed directly from returns; there is no transaction cost, slippage, turnover, or commission adjustment."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_gross_stock_strategy_no_costs",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 12005,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "missing_costs",
+                  "severity": "high",
+                  "evidence": "`strategy_return` and `sharpe` are computed directly from returns; there is no transaction cost, slippage, turnover, or commission adjustment."
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "The omitted costs might be modeled in code or evaluation steps that are not included in this snippet."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"missing_costs\",\"severity\":\"high\",\"evidence\":\"`strategy_return` and `sharpe` are computed directly from returns; there is no transaction cost, slippage, turnover, or commission adjustment.\"}],\"confidence\":0.98,\"counter_arguments\":[\"The omitted costs might be modeled in code or evaluation steps that are not included in this snippet.\"]}\n",
+            "latency_ms": 11890,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "missing_costs",
+                "severity": "high",
+                "evidence": "`strategy_return` and `sharpe` are computed directly from returns; there is no transaction cost, slippage, turnover, or commission adjustment."
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "The omitted costs might be modeled in code or evaluation steps that are not included in this snippet."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_gross_stock_strategy_no_costs.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_unsubstantiated_stock_claim",
+        "expected": [
+          "unsupported_claim"
+        ],
+        "predicted": [
+          "unsupported_claim"
+        ],
+        "findings": [
+          {
+            "issue": "unsupported_claim",
+            "severity": "major",
+            "evidence": "\"beats all alternatives across AAPL, MSFT, JPM, XOM, and SPY\" with \"We provide no baseline\" and only a visual curve as support."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_unsubstantiated_stock_claim",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3588,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "unsupported_claim",
+                  "severity": "major",
+                  "evidence": "\"beats all alternatives across AAPL, MSFT, JPM, XOM, and SPY\" with \"We provide no baseline\" and only a visual curve as support."
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "The text may be a placeholder summary rather than the full evaluation, so the missing baseline could exist elsewhere."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"unsupported_claim\",\"severity\":\"major\",\"evidence\":\"\\\"beats all alternatives across AAPL, MSFT, JPM, XOM, and SPY\\\" with \\\"We provide no baseline\\\" and only a visual curve as support.\"}],\"confidence\":0.98,\"counter_arguments\":[\"The text may be a placeholder summary rather than the full evaluation, so the missing baseline could exist elsewhere.\"]}\n",
+            "latency_ms": 3449,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "unsupported_claim",
+                "severity": "major",
+                "evidence": "\"beats all alternatives across AAPL, MSFT, JPM, XOM, and SPY\" with \"We provide no baseline\" and only a visual curve as support."
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "The text may be a placeholder summary rather than the full evaluation, so the missing baseline could exist elsewhere."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_unsubstantiated_stock_claim.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_next_return_rank_feature",
+        "expected": [
+          "lookahead"
+        ],
+        "predicted": [
+          "lookahead"
+        ],
+        "findings": [
+          {
+            "issue": "lookahead",
+            "severity": "critical",
+            "evidence": "`prices['next_return'] = ...pct_change().shift(-1)` assigns each row a future return, and `rank_feature` is then built from that future value on the same date."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_next_return_rank_feature",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 8304,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "lookahead",
+                  "severity": "critical",
+                  "evidence": "`prices['next_return'] = ...pct_change().shift(-1)` assigns each row a future return, and `rank_feature` is then built from that future value on the same date."
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "If `next_return` was intended as the prediction target rather than an input feature, the leakage would depend on how `target` is defined; however, it is still used as a feature here."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"lookahead\",\"severity\":\"critical\",\"evidence\":\"`prices['next_return'] = ...pct_change().shift(-1)` assigns each row a future return, and `rank_feature` is then built from that future value on the same date.\"}],\"confidence\":0.98,\"counter_arguments\":[\"If `next_return` was intended as the prediction target rather than an input feature, the leakage would depend on how `target` is defined; however, it is still used as a feature here.\"]}\n",
+            "latency_ms": 8176,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "lookahead",
+                "severity": "critical",
+                "evidence": "`prices['next_return'] = ...pct_change().shift(-1)` assigns each row a future return, and `rank_feature` is then built from that future value on the same date."
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "If `next_return` was intended as the prediction target rather than an input feature, the leakage would depend on how `target` is defined; however, it is still used as a feature here."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_next_return_rank_feature.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_future_winner_signal",
+        "expected": [
+          "lookahead",
+          "missing_costs"
+        ],
+        "predicted": [
+          "lookahead",
+          "missing_costs"
+        ],
+        "findings": [
+          {
+            "issue": "lookahead",
+            "severity": "critical",
+            "evidence": "`prices['future_ret'] = ...pct_change().shift(-1)` creates a next-period return label, then `signal` is ranked from that future value before `strategy_return` is computed."
+          },
+          {
+            "issue": "missing_costs",
+            "severity": "medium",
+            "evidence": "`strategy_return` is computed directly as `signal * ...pct_change()` with no fees, slippage, turnover, or commissions modeled."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_future_winner_signal",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 5885,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "lookahead",
+                  "severity": "critical",
+                  "evidence": "`prices['future_ret'] = ...pct_change().shift(-1)` creates a next-period return label, then `signal` is ranked from that future value before `strategy_return` is computed."
+                },
+                {
+                  "issue": "missing_costs",
+                  "severity": "medium",
+                  "evidence": "`strategy_return` is computed directly as `signal * ...pct_change()` with no fees, slippage, turnover, or commissions modeled."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "`future_ret` could be intended as a training label rather than an input to a live trading rule, although the same column is also used to form `signal`.",
+                "The snippet does not show a full backtest report, so cost omission may be addressed elsewhere in the larger artifact."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"lookahead\",\"severity\":\"critical\",\"evidence\":\"`prices['future_ret'] = ...pct_change().shift(-1)` creates a next-period return label, then `signal` is ranked from that future value before `strategy_return` is computed.\"},{\"issue\":\"missing_costs\",\"severity\":\"medium\",\"evidence\":\"`strategy_return` is computed directly as `signal * ...pct_change()` with no fees, slippage, turnover, or commissions modeled.\"}],\"confidence\":0.99,\"counter_arguments\":[\"`future_ret` could be intended as a training label rather than an input to a live trading rule, although the same column is also used to form `signal`.\",\"The snippet does not show a full backtest report, so cost omission may be addressed elsewhere in the larger artifact.\"]}\n",
+            "latency_ms": 5771,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "lookahead",
+                "severity": "critical",
+                "evidence": "`prices['future_ret'] = ...pct_change().shift(-1)` creates a next-period return label, then `signal` is ranked from that future value before `strategy_return` is computed."
+              },
+              {
+                "issue": "missing_costs",
+                "severity": "medium",
+                "evidence": "`strategy_return` is computed directly as `signal * ...pct_change()` with no fees, slippage, turnover, or commissions modeled."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "`future_ret` could be intended as a training label rather than an input to a live trading rule, although the same column is also used to form `signal`.",
+              "The snippet does not show a full backtest report, so cost omission may be addressed elsewhere in the larger artifact."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_future_winner_signal.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_standard_scaler_full_panel",
+        "expected": [
+          "normalization_leakage"
+        ],
+        "predicted": [
+          "normalization_leakage"
+        ],
+        "findings": [
+          {
+            "issue": "normalization_leakage",
+            "severity": "critical",
+            "evidence": "`StandardScaler().fit_transform(features)` is run before `train = scaled_features[:900]` / `test = scaled_features[900:]`, so scaling statistics use all dates including the test period."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_standard_scaler_full_panel",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4668,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "normalization_leakage",
+                  "severity": "critical",
+                  "evidence": "`StandardScaler().fit_transform(features)` is run before `train = scaled_features[:900]` / `test = scaled_features[900:]`, so scaling statistics use all dates including the test period."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If the slice boundary happens to fall after all data used for model fitting in a separate, unseen step, this snippet alone would not prove leakage in the full pipeline."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"normalization_leakage\",\"severity\":\"critical\",\"evidence\":\"`StandardScaler().fit_transform(features)` is run before `train = scaled_features[:900]` / `test = scaled_features[900:]`, so scaling statistics use all dates including the test period.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If the slice boundary happens to fall after all data used for model fitting in a separate, unseen step, this snippet alone would not prove leakage in the full pipeline.\"]}\n",
+            "latency_ms": 4541,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "normalization_leakage",
+                "severity": "critical",
+                "evidence": "`StandardScaler().fit_transform(features)` is run before `train = scaled_features[:900]` / `test = scaled_features[900:]`, so scaling statistics use all dates including the test period."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If the slice boundary happens to fall after all data used for model fitting in a separate, unseen step, this snippet alone would not prove leakage in the full pipeline."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_standard_scaler_full_panel.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_global_volume_normalized",
+        "expected": [
+          "normalization_leakage"
+        ],
+        "predicted": [
+          "normalization_leakage"
+        ],
+        "findings": [
+          {
+            "issue": "normalization_leakage",
+            "severity": "critical",
+            "evidence": "`prices['normalized_volume'] = (prices['volume'] - prices['volume'].min()) / (prices['volume'].max() - prices['volume'].min())` computes min/max on the full dataset before `train`/`test` split."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_global_volume_normalized",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 10521,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "normalization_leakage",
+                  "severity": "critical",
+                  "evidence": "`prices['normalized_volume'] = (prices['volume'] - prices['volume'].min()) / (prices['volume'].max() - prices['volume'].min())` computes min/max on the full dataset before `train`/`test` split."
+                }
+              ],
+              "confidence": 0.99,
+              "counter_arguments": [
+                "If `normalized_volume` is not used as a model feature, the leakage would not affect the benchmark result."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"normalization_leakage\",\"severity\":\"critical\",\"evidence\":\"`prices['normalized_volume'] = (prices['volume'] - prices['volume'].min()) / (prices['volume'].max() - prices['volume'].min())` computes min/max on the full dataset before `train`/`test` split.\"}],\"confidence\":0.99,\"counter_arguments\":[\"If `normalized_volume` is not used as a model feature, the leakage would not affect the benchmark result.\"]}\n",
+            "latency_ms": 10406,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "normalization_leakage",
+                "severity": "critical",
+                "evidence": "`prices['normalized_volume'] = (prices['volume'] - prices['volume'].min()) / (prices['volume'].max() - prices['volume'].min())` computes min/max on the full dataset before `train`/`test` split."
+              }
+            ],
+            "confidence": 0.99,
+            "counter_arguments": [
+              "If `normalized_volume` is not used as a model feature, the leakage would not affect the benchmark result."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_global_volume_normalized.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_random_split_multi_stock_features",
+        "expected": [
+          "temporal_split"
+        ],
+        "predicted": [
+          "temporal_split"
+        ],
+        "findings": [
+          {
+            "issue": "temporal_split",
+            "severity": "critical",
+            "evidence": "`train_test_split(..., shuffle=True, random_state=21)` randomly shuffles time-series rows before splitting, so future rows can land in training while earlier rows are in test."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_random_split_multi_stock_features",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4622,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "temporal_split",
+                  "severity": "critical",
+                  "evidence": "`train_test_split(..., shuffle=True, random_state=21)` randomly shuffles time-series rows before splitting, so future rows can land in training while earlier rows are in test."
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "If the task was purely cross-sectional classification with no temporal forecasting objective, a shuffled split could be acceptable."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"temporal_split\",\"severity\":\"critical\",\"evidence\":\"`train_test_split(..., shuffle=True, random_state=21)` randomly shuffles time-series rows before splitting, so future rows can land in training while earlier rows are in test.\"}],\"confidence\":0.98,\"counter_arguments\":[\"If the task was purely cross-sectional classification with no temporal forecasting objective, a shuffled split could be acceptable.\"]}\n",
+            "latency_ms": 4513,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "temporal_split",
+                "severity": "critical",
+                "evidence": "`train_test_split(..., shuffle=True, random_state=21)` randomly shuffles time-series rows before splitting, so future rows can land in training while earlier rows are in test."
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "If the task was purely cross-sectional classification with no temporal forecasting objective, a shuffled split could be acceptable."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_random_split_multi_stock_features.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_shuffled_alpha_validation",
+        "expected": [
+          "temporal_split"
+        ],
+        "predicted": [
+          "temporal_split"
+        ],
+        "findings": [
+          {
+            "issue": "temporal_split",
+            "severity": "critical",
+            "evidence": "`train_test_split(alpha_rows, test_size=0.30, shuffle=True)` randomly shuffles dated stock observations instead of preserving time order."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_shuffled_alpha_validation",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3708,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "temporal_split",
+                  "severity": "critical",
+                  "evidence": "`train_test_split(alpha_rows, test_size=0.30, shuffle=True)` randomly shuffles dated stock observations instead of preserving time order."
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "If the task were strictly cross-sectional with no temporal dependency and no time-based evaluation, shuffling might be acceptable."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"temporal_split\",\"severity\":\"critical\",\"evidence\":\"`train_test_split(alpha_rows, test_size=0.30, shuffle=True)` randomly shuffles dated stock observations instead of preserving time order.\"}],\"confidence\":0.98,\"counter_arguments\":[\"If the task were strictly cross-sectional with no temporal dependency and no time-based evaluation, shuffling might be acceptable.\"]}\n",
+            "latency_ms": 3573,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "temporal_split",
+                "severity": "critical",
+                "evidence": "`train_test_split(alpha_rows, test_size=0.30, shuffle=True)` randomly shuffles dated stock observations instead of preserving time order."
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "If the task were strictly cross-sectional with no temporal dependency and no time-based evaluation, shuffling might be acceptable."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_shuffled_alpha_validation.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_open_close_strategy_no_costs",
+        "expected": [
+          "missing_costs"
+        ],
+        "predicted": [
+          "missing_costs"
+        ],
+        "findings": [
+          {
+            "issue": "missing_costs",
+            "severity": "medium",
+            "evidence": "The backtest only uses `prices['strategy_return'] = prices['signal'] * prices['intraday_ret']` and computes Sharpe on that series; there is no fee, slippage, turnover, or commission adjustment."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_open_close_strategy_no_costs",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 7419,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "missing_costs",
+                  "severity": "medium",
+                  "evidence": "The backtest only uses `prices['strategy_return'] = prices['signal'] * prices['intraday_ret']` and computes Sharpe on that series; there is no fee, slippage, turnover, or commission adjustment."
+                }
+              ],
+              "confidence": 0.95,
+              "counter_arguments": [
+                "This may be a simplified illustrative snippet and transaction costs could be applied elsewhere outside the shown code."
+              ]
+            },
+            "raw_output": "{\n  \"verdict\": \"FAIL\",\n  \"issues\": [\n    {\n      \"issue\": \"missing_costs\",\n      \"severity\": \"medium\",\n      \"evidence\": \"The backtest only uses `prices['strategy_return'] = prices['signal'] * prices['intraday_ret']` and computes Sharpe on that series; there is no fee, slippage, turnover, or commission adjustment.\"\n    }\n  ],\n  \"confidence\": 0.95,\n  \"counter_arguments\": [\n    \"This may be a simplified illustrative snippet and transaction costs could be applied elsewhere outside the shown code.\"\n  ]\n}\n",
+            "latency_ms": 7290,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "missing_costs",
+                "severity": "medium",
+                "evidence": "The backtest only uses `prices['strategy_return'] = prices['signal'] * prices['intraday_ret']` and computes Sharpe on that series; there is no fee, slippage, turnover, or commission adjustment."
+              }
+            ],
+            "confidence": 0.95,
+            "counter_arguments": [
+              "This may be a simplified illustrative snippet and transaction costs could be applied elsewhere outside the shown code."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_open_close_strategy_no_costs.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_high_turnover_rebalance_no_costs",
+        "expected": [
+          "missing_costs"
+        ],
+        "predicted": [
+          "missing_costs"
+        ],
+        "findings": [
+          {
+            "issue": "missing_costs",
+            "severity": "high",
+            "evidence": "`strategy_return = ...` and `sharpe = ...` evaluate raw returns only; no fees, slippage, commissions, or turnover costs are modeled."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_high_turnover_rebalance_no_costs",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 6254,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "missing_costs",
+                  "severity": "high",
+                  "evidence": "`strategy_return = ...` and `sharpe = ...` evaluate raw returns only; no fees, slippage, commissions, or turnover costs are modeled."
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "The snippet may be only a minimal example, with trading frictions handled elsewhere in the full notebook or pipeline."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"missing_costs\",\"severity\":\"high\",\"evidence\":\"`strategy_return = ...` and `sharpe = ...` evaluate raw returns only; no fees, slippage, commissions, or turnover costs are modeled.\"}],\"confidence\":0.98,\"counter_arguments\":[\"The snippet may be only a minimal example, with trading frictions handled elsewhere in the full notebook or pipeline.\"]}\n",
+            "latency_ms": 6121,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "missing_costs",
+                "severity": "high",
+                "evidence": "`strategy_return = ...` and `sharpe = ...` evaluate raw returns only; no fees, slippage, commissions, or turnover costs are modeled."
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "The snippet may be only a minimal example, with trading frictions handled elsewhere in the full notebook or pipeline."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_high_turnover_rebalance_no_costs.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_top_stock_claim_no_evidence",
+        "expected": [
+          "unsupported_claim"
+        ],
+        "predicted": [
+          "unsupported_claim"
+        ],
+        "findings": [
+          {
+            "issue": "unsupported_claim",
+            "severity": "major",
+            "evidence": "\"clearly outperforms every conventional equity benchmark\" with \"We omit baseline comparisons\" provides no evidence or baseline support."
+          }
+        ],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_top_stock_claim_no_evidence",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 4180,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "FAIL",
+              "issues": [
+                {
+                  "issue": "unsupported_claim",
+                  "severity": "major",
+                  "evidence": "\"clearly outperforms every conventional equity benchmark\" with \"We omit baseline comparisons\" provides no evidence or baseline support."
+                }
+              ],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "The omitted baseline comparisons may exist in another section of the full report that is not included in the submitted excerpt."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"FAIL\",\"issues\":[{\"issue\":\"unsupported_claim\",\"severity\":\"major\",\"evidence\":\"\\\"clearly outperforms every conventional equity benchmark\\\" with \\\"We omit baseline comparisons\\\" provides no evidence or baseline support.\"}],\"confidence\":0.98,\"counter_arguments\":[\"The omitted baseline comparisons may exist in another section of the full report that is not included in the submitted excerpt.\"]}\n",
+            "latency_ms": 4035,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "FAIL",
+            "issues": [
+              {
+                "issue": "unsupported_claim",
+                "severity": "major",
+                "evidence": "\"clearly outperforms every conventional equity benchmark\" with \"We omit baseline comparisons\" provides no evidence or baseline support."
+              }
+            ],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "The omitted baseline comparisons may exist in another section of the full report that is not included in the submitted excerpt."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_top_stock_claim_no_evidence.json"
+        }
+      },
+      {
+        "case_id": "quotemedia_train_window_scaler_clean",
+        "expected": [],
+        "predicted": [],
+        "findings": [],
+        "raw_output": {
+          "mode": "live_corax_codex_reviewer",
+          "adapter_name": "corax-live",
+          "case_id": "quotemedia_train_window_scaler_clean",
+          "model": "gpt-5.4-mini",
+          "latency_ms": 3044,
+          "cost_usd": null,
+          "error": null,
+          "reviewer_result": {
+            "verdict_json": {
+              "verdict": "PASS",
+              "issues": [],
+              "confidence": 0.98,
+              "counter_arguments": [
+                "The snippet is incomplete, so downstream code could still introduce leakage or cost-free backtesting outside this excerpt."
+              ]
+            },
+            "raw_output": "{\"verdict\":\"PASS\",\"issues\":[],\"confidence\":0.98,\"counter_arguments\":[\"The snippet is incomplete, so downstream code could still introduce leakage or cost-free backtesting outside this excerpt.\"]}\n",
+            "latency_ms": 2842,
+            "network_error": false,
+            "error": null
+          },
+          "verdict_json": {
+            "verdict": "PASS",
+            "issues": [],
+            "confidence": 0.98,
+            "counter_arguments": [
+              "The snippet is incomplete, so downstream code could still introduce leakage or cost-free backtesting outside this excerpt."
+            ]
+          },
+          "artifact_path": ".runtime\\runs\\part3-live-full-v2\\corax-live\\quotemedia_train_window_scaler_clean.json"
+        }
+      }
+    ]
+  }
+]

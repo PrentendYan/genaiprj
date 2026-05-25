@@ -90,6 +90,8 @@ python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --ada
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-live --model gpt-5.4-mini --limit 3 --sentinel-summary
 ```
 
+Windows 下 Codex CLI 可能随 ChatGPT VSCode 扩展一起安装，需要设置 `QUANT_AUDIT_CODEX_RESOURCE_DIR` 指向其 `bin` 目录后再运行 live adapter；建议在 Git Bash 中运行以避免 PowerShell 的进程 spawn 限制。具体路径和环境变量见 `CONFIGURATION.md`。
+
 当前机器上的 npm global `codex` 入口不完整。live adapter 的模型可以通过 `--model` 或 `QUANT_AUDIT_LIVE_MODEL` 切换，便宜模型适合 smoke test，更好的模型适合最终 evaluation。live adapter 会把每个 case 的 raw artifact 写到 `.runtime/runs/<run_id>/<adapter>/<case_id>.json`，并把 aggregate metrics 写到 `.runtime/runs/<run_id>/results.json`。完整说明见 `CONFIGURATION.md` 的“本机 Codex / Claude CLI”。
 
 ## 运行 DARF MCP 测试
@@ -110,13 +112,21 @@ python -m pytest tests
 当前已验证结果：
 
 - `python -m unittest discover -s tests`：22 passed。
-- `python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter darf`：可运行。
-- `python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax`：可运行。
-- CORAX offline adapter on 45 current cases：precision 0.9459、recall 0.9722、F1 0.9589。
-- `corax-live` 已用 `gpt-5.4-mini` 跑通 `btc_future_return_feature`，能返回 structured verdict 并保存 run artifact。
-- `darf-live` 已接入 CLI 和 mock tests；真实调用需要本机 Codex Desktop bundled CLI 可用。
-- Claude Sentinel summary wrapper 已接入 CLI 和 mock tests；真实调用需要本机 Claude CLI 可用并已登录。
 - `cd integrations/darf_mcp && python -m pytest tests`：103 passed。
+- 五个 adapter 已在完整 45 个 case 上完成评估，90 次 live 模型调用零失败，每个 case 都返回可解析的 verdict。
+
+| Adapter | Mode | Precision | Recall | F1 | FP | FN |
+|---|---|---:|---:|---:|---:|---:|
+| `single_llm_baseline` | offline | 1.0000 | 0.5556 | 0.7143 | 0 | 16 |
+| `darf` | offline | 0.9459 | 0.9722 | 0.9589 | 2 | 1 |
+| `corax` | offline | 0.9459 | 0.9722 | 0.9589 | 2 | 1 |
+| `corax-live` | live | 0.9722 | 0.9722 | 0.9722 | 1 | 1 |
+| `darf-live` | live | 0.8182 | 1.0000 | 0.9000 | 8 | 0 |
+
+- offline `darf` 和 `corax` 在本 case set 上操作等价（共用确定性 normalization scan）。
+- `corax-live` F1 最高；`darf-live` recall 达到 1.0，是唯一抓住全部标注问题的 adapter，代价是 8 个 false positive。
+- Claude Sentinel summary wrapper 已接入 CLI 和 mock tests；真实调用需要本机 Claude CLI 可用并已登录。
+- 完整结果分析见 `reports/primary_report.md`。
 
 ## 配置方式
 

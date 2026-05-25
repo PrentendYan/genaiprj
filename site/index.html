@@ -1,107 +1,302 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Adversarial AI Audit for Quant Research</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #17202a;
-      background: #f7f8fa;
-      line-height: 1.55;
-    }
-    header {
-      background: #102033;
-      color: white;
-      padding: 48px 24px 36px;
-    }
-    main {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 28px 24px 56px;
-    }
-    h1 {
-      max-width: 900px;
-      margin: 0 auto;
-      font-size: 40px;
-      line-height: 1.1;
-      letter-spacing: 0;
-    }
-    header p {
-      max-width: 900px;
-      margin: 16px auto 0;
-      color: #d9e3ee;
-      font-size: 18px;
-    }
-    section {
-      margin: 28px 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
-      border: 1px solid #dfe5ec;
-    }
-    th, td {
-      text-align: left;
-      padding: 12px;
-      border-bottom: 1px solid #dfe5ec;
-      vertical-align: top;
-    }
-    th {
-      background: #edf2f7;
-    }
-    code {
-      background: #eef2f5;
-      padding: 2px 5px;
-      border-radius: 4px;
-    }
-    .lede {
-      font-size: 18px;
-    }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Can LLMs Audit Quant Research?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:ital,opsz@0,6..72;1,6..72&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c1a17;
+    --paper:#f4f0e6;
+    --paper-deep:#ebe5d6;
+    --rule:#cbc3ad;
+    --accent:#9a3b26;
+    --accent-soft:#b8654f;
+    --good:#3f6b3a;
+    --warn:#a8772a;
+    --muted:#6f6857;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Newsreader",Georgia,serif;
+    font-size:19px;
+    line-height:1.62;
+    -webkit-font-smoothing:antialiased;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;
+    background-image:radial-gradient(rgba(28,26,23,.025) 1px,transparent 1px);
+    background-size:4px 4px;
+  }
+  .wrap{max-width:860px;margin:0 auto;padding:0 32px;position:relative;z-index:2;}
+
+  /* ---- masthead ---- */
+  header{
+    border-bottom:3px double var(--ink);
+    padding:60px 0 26px;
+    margin-bottom:8px;
+  }
+  .kicker{
+    font-family:"JetBrains Mono",monospace;
+    font-size:12px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:22px;
+  }
+  h1{
+    font-family:"Fraunces",serif;
+    font-weight:600;
+    font-size:clamp(40px,7vw,76px);
+    line-height:1.02;
+    letter-spacing:-.02em;
+    margin:0 0 18px;
+  }
+  h1 em{font-style:italic;color:var(--accent);}
+  .standfirst{
+    font-size:21px;color:var(--muted);font-style:italic;
+    max-width:620px;
+  }
+  .byline{
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin-top:26px;
+    display:flex;gap:20px;flex-wrap:wrap;
+  }
+
+  /* ---- animated entrance ---- */
+  .reveal{opacity:0;transform:translateY(14px);animation:rise .7s cubic-bezier(.2,.7,.2,1) forwards;}
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+  header .kicker{animation-delay:.05s;}
+  header h1{animation-delay:.15s;}
+  header .standfirst{animation-delay:.3s;}
+  header .byline{animation-delay:.42s;}
+
+  section{padding:38px 0;border-bottom:1px solid var(--rule);}
+  section:last-of-type{border-bottom:none;}
+  h2{
+    font-family:"Fraunces",serif;font-weight:500;
+    font-size:13px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);
+    margin:0 0 20px;
+    display:flex;align-items:baseline;gap:12px;
+  }
+  h2::before{
+    content:attr(data-n);
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    color:var(--muted);
+    border:1px solid var(--rule);border-radius:50%;
+    width:24px;height:24px;display:inline-flex;
+    align-items:center;justify-content:center;flex:none;
+  }
+  p{margin:0 0 16px;}
+  .lead{font-size:22px;line-height:1.5;}
+  .lead .drop{
+    font-family:"Fraunces",serif;font-weight:600;
+    float:left;font-size:76px;line-height:.74;
+    padding:8px 10px 0 0;color:var(--accent);
+  }
+  strong{font-weight:600;}
+  code,.mono{font-family:"JetBrains Mono",monospace;font-size:.84em;}
+  code{background:var(--paper-deep);padding:1px 5px;border-radius:3px;}
+
+  /* ---- finding cards ---- */
+  .findings{display:grid;gap:0;margin-top:8px;}
+  .finding{
+    display:grid;grid-template-columns:64px 1fr;gap:20px;
+    padding:20px 0;border-top:1px solid var(--rule);
+  }
+  .finding:first-child{border-top:none;}
+  .finding .num{
+    font-family:"Fraunces",serif;font-weight:600;font-size:34px;
+    color:var(--accent-soft);line-height:1;
+  }
+  .finding h3{
+    font-family:"Fraunces",serif;font-weight:500;font-size:21px;
+    margin:0 0 6px;line-height:1.2;
+  }
+  .finding p{font-size:17px;color:#3a352c;margin:0;}
+
+  /* ---- table ---- */
+  .tablewrap{overflow-x:auto;margin:6px 0 14px;}
+  table{border-collapse:collapse;width:100%;font-size:15px;}
+  caption{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    text-align:left;padding-bottom:10px;
+  }
+  th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--rule);}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{
+    font-family:"JetBrains Mono",monospace;font-weight:500;
+    font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);border-bottom:2px solid var(--ink);
+  }
+  tbody td{font-family:"JetBrains Mono",monospace;}
+  tbody td:first-child{font-family:"Newsreader",serif;font-size:16px;}
+  tbody tr:hover{background:var(--paper-deep);}
+  .best{color:var(--good);font-weight:500;}
+  .tag{
+    font-family:"JetBrains Mono",monospace;font-size:9px;
+    letter-spacing:.06em;text-transform:uppercase;
+    padding:2px 6px;border-radius:3px;border:1px solid var(--rule);
+    color:var(--muted);
+  }
+  .tag.live{color:var(--accent);border-color:var(--accent-soft);}
+
+  /* ---- pull stat ---- */
+  .statrow{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+    background:var(--rule);border:1px solid var(--rule);
+    margin:22px 0 6px;
+  }
+  .stat{background:var(--paper);padding:22px 18px;}
+  .stat .big{
+    font-family:"Fraunces",serif;font-weight:600;
+    font-size:46px;line-height:1;color:var(--accent);
+  }
+  .stat .lbl{
+    font-family:"JetBrains Mono",monospace;font-size:10px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+    margin-top:8px;
+  }
+
+  /* ---- three column verdict ---- */
+  .verdict{display:grid;gap:18px;margin-top:8px;}
+  .vcol{padding-left:16px;border-left:3px solid var(--rule);}
+  .vcol.help{border-color:var(--good);}
+  .vcol.no{border-color:var(--warn);}
+  .vcol.human{border-color:var(--accent);}
+  .vcol h3{
+    font-family:"JetBrains Mono",monospace;font-size:11px;
+    letter-spacing:.1em;text-transform:uppercase;margin:0 0 6px;
+  }
+  .vcol.help h3{color:var(--good);}
+  .vcol.no h3{color:var(--warn);}
+  .vcol.human h3{color:var(--accent);}
+  .vcol p{font-size:16px;margin:0;color:#3a352c;}
+
+  footer{
+    padding:34px 0 60px;
+    font-family:"JetBrains Mono",monospace;
+    font-size:11px;letter-spacing:.06em;color:var(--muted);
+  }
+  footer a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--rule);}
+
+  @media(max-width:560px){
+    body{font-size:18px;}
+    .wrap{padding:0 20px;}
+    .statrow{grid-template-columns:1fr;}
+    .finding{grid-template-columns:1fr;gap:4px;}
+    .finding .num{font-size:26px;}
+  }
+</style>
 </head>
 <body>
+<div class="wrap">
+
   <header>
-    <h1>Can LLMs Audit Quant Research?</h1>
-    <p>A working benchmark and prototype for adversarial AI review of financial backtests, integrating DARF and CORAX design patterns.</p>
+    <div class="kicker reveal">Generative AI &mdash; Final Project Report</div>
+    <h1 class="reveal">Can LLMs <em>Audit</em><br>Quant Research?</h1>
+    <p class="standfirst reveal">An adversarial AI reviewer reads a backtest the way a careful quant would, and looks for the one line that turns a losing strategy into a winning chart.</p>
+    <div class="byline reveal">
+      <span>45 labeled cases</span>
+      <span>5 reviewer adapters</span>
+      <span>90 live model calls, 0 failures</span>
+    </div>
   </header>
-  <main>
-    <section>
-      <p class="lede">The project evaluates whether adversarial review systems can catch lookahead bias, leakage, invalid time-series splits, missing trading costs, and unsupported performance claims in quant research workflows.</p>
-    </section>
 
-    <section>
-      <h2>Integrated Systems</h2>
+  <section>
+    <h2 data-n="1">The Question</h2>
+    <p class="lead"><span class="drop">A</span>I tools can write a backtest in minutes, and that speed is exactly what makes research mistakes easier to miss. A shift in the wrong direction, a normalization step before the split, a random shuffle of a time series, a Sharpe ratio computed gross of costs: none of these errors announces itself, and each produces a backtest that looks profitable.</p>
+    <p>This project asks whether an <strong>adversarial AI reviewer</strong>, one model checking another model's work, can catch those mistakes reliably enough to be worth putting into a research workflow. It builds two designs, <strong>DARF</strong> and <strong>CORAX</strong>, into a reproducible benchmark and measures them against a naive rule baseline.</p>
+  </section>
+
+  <section>
+    <h2 data-n="2">The Benchmark</h2>
+    <p>Forty-five labeled audit cases, each a small piece of real research material, drawn from BTC data, multi-stock equity data, and real tutorial notebooks. Five failure modes are covered, alongside eleven clean controls written as deliberate near-misses, so an over-eager reviewer is exposed as precisely as a careless one.</p>
+    <div class="statrow">
+      <div class="stat"><div class="big">5</div><div class="lbl">Failure modes audited</div></div>
+      <div class="stat"><div class="big">11</div><div class="lbl">Clean control cases</div></div>
+      <div class="stat"><div class="big">0</div><div class="lbl">Synthetic fallback rows</div></div>
+    </div>
+    <p style="margin-top:18px;font-size:16px;color:var(--muted);">Lookahead bias &middot; missing transaction costs &middot; full-sample normalization leakage &middot; random splits on time series &middot; unsupported performance claims.</p>
+  </section>
+
+  <section>
+    <h2 data-n="3">Results</h2>
+    <p>Five adapters, full 45-case benchmark. Two run <span class="mono">offline</span> as deterministic scans; two run <span class="mono">live</span>, spawning a real model per case.</p>
+    <div class="tablewrap">
       <table>
-        <tr><th>System</th><th>Role in this project</th></tr>
-        <tr><td>DARF</td><td>Cross-model adversarial review using blind briefs and gate decisions.</td></tr>
-        <tr><td>CORAX</td><td>Codex-on-Codex Santa Method review with a heterogeneous Sentinel for groupthink checks.</td></tr>
+        <caption>Precision / Recall / F1 against the labeled issue set</caption>
+        <thead>
+          <tr><th>Adapter</th><th>Mode</th><th>Prec.</th><th>Recall</th><th>F1</th><th>FP</th><th>FN</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>single_llm_baseline</td><td><span class="tag">offline</span></td><td>1.000</td><td>0.556</td><td>0.714</td><td>0</td><td>16</td></tr>
+          <tr><td>darf</td><td><span class="tag">offline</span></td><td>0.946</td><td>0.972</td><td>0.959</td><td>2</td><td>1</td></tr>
+          <tr><td>corax</td><td><span class="tag">offline</span></td><td>0.946</td><td>0.972</td><td>0.959</td><td>2</td><td>1</td></tr>
+          <tr><td>corax-live</td><td><span class="tag live">live</span></td><td>0.972</td><td>0.972</td><td class="best">0.972</td><td>1</td><td>1</td></tr>
+          <tr><td>darf-live</td><td><span class="tag live">live</span></td><td>0.818</td><td class="best">1.000</td><td>0.900</td><td>8</td><td>0</td></tr>
+        </tbody>
       </table>
-    </section>
+    </div>
+    <p>The baseline fails <em>systematically</em>: with no rule for normalization or unsupported claims, it misses those categories entirely. AI review closes the gap, lifting recall from <strong>0.56</strong> to as high as <strong>1.00</strong>. But the two strongest adapters sit at opposite ends of a precision&ndash;recall tradeoff. There is no single best reviewer; the right one depends on whether a setting can better tolerate a missed problem or a false alarm.</p>
+  </section>
 
-    <section>
-      <h2>Working Artifact</h2>
-      <p>Run <code>python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json</code> to reproduce the benchmark metrics. The harness uses labeled financial-code cases and a bundled BTC data fixture.</p>
-    </section>
+  <section>
+    <h2 data-n="4">Three Findings</h2>
+    <div class="findings">
+      <div class="finding">
+        <div class="num">01</div>
+        <div>
+          <h3>A live model caught what no scanner could</h3>
+          <p>One backtest declares a transaction-cost variable, then never uses it. Four of five adapters miss this dead store. Only <code>darf-live</code> reads the data flow and catches it, the clearest evidence that semantic review recovers errors rule-based scanning structurally cannot.</p>
+        </div>
+      </div>
+      <div class="finding">
+        <div class="num">02</div>
+        <div>
+          <h3>Offline DARF and CORAX are indistinguishable</h3>
+          <p>On this benchmark the two offline adapters share a scanner and produce identical results. The mechanism difference between the designs only becomes visible once a real model is in the loop.</p>
+        </div>
+      </div>
+      <div class="finding">
+        <div class="num">03</div>
+        <div>
+          <h3>When four reviewers outvote the label</h3>
+          <p>One case annotated <em>clean</em> is flagged by all four non-baseline adapters. When independent reviewers, across two model families, unanimously contradict a label, the benchmark is using their agreement to surface an ambiguity in its own annotations.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <section>
-      <h2>Evidence</h2>
-      <p>The current offline version reports precision, recall, and F1 for three review profiles: a single-pass baseline, a DARF-inspired cross-model profile, and a CORAX-inspired Santa Method plus Sentinel profile.</p>
-      <table>
-        <tr><th>Profile</th><th>Precision</th><th>Recall</th><th>F1</th></tr>
-        <tr><td><code>single_llm_baseline</code></td><td>1.00</td><td>0.60</td><td>0.75</td></tr>
-        <tr><td><code>darf_cross_model</code></td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
-        <tr><td><code>corax_santa_sentinel</code></td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
-      </table>
-    </section>
+  <section>
+    <h2 data-n="5">Where AI Stands</h2>
+    <div class="verdict">
+      <div class="vcol help">
+        <h3>Where it helps</h3>
+        <p>A large, real gain over naive rule checking, concentrated exactly where rules are weakest: recall climbs from 0.56 to 1.00, and a live model catches semantic errors no deterministic scan detects.</p>
+      </div>
+      <div class="vcol no">
+        <h3>Where it does not</h3>
+        <p>It does not settle the DARF-versus-CORAX design question. Offline, the adversarial machinery meant to differentiate them is never exercised, so the benchmark compares coverage, not design.</p>
+      </div>
+      <div class="vcol human">
+        <h3>Where a human is needed</h3>
+        <p>Taxonomy. Whether random-split and lookahead are one issue or two, and how to rule on an ambiguous case, are annotation choices. AI can expose the boundary; it cannot define it.</p>
+      </div>
+    </div>
+  </section>
 
-    <section>
-      <h2>Limitations</h2>
-      <p>The deterministic harness is a reproducible scaffold. The next experiment should run live LLM reviewers, store raw outputs, and compare human labels, cost, latency, and failure modes.</p>
-    </section>
-  </main>
+  <footer>
+    <div>Generative AI &mdash; Final Project &nbsp;/&nbsp; Full write-up in <a href="../reports/primary_report.md">reports/primary_report.md</a></div>
+    <div style="margin-top:8px;">Benchmark, adapters and raw run artifacts in the project repository.</div>
+  </footer>
+
+</div>
 </body>
 </html>

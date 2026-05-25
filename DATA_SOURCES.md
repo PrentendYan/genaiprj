@@ -36,17 +36,19 @@ Files:
 - `data/quotemedia_prices_sample.csv`
 - `data/quotemedia_tickers_sample.csv`
 
-The stock fixture is a small local sample extracted from the QTS copy of Nasdaq
-Zacks Fundamentals B, copies as of January 2024. The original local source files
-were:
-
-- `/Users/jiayichen/Documents/GitHub/QTS/hw3_data/QUOTEMEDIA_PRICES.csv`
-- `/Users/jiayichen/Documents/GitHub/QTS/hw3_data/QUOTEMEDIA_TICKERS.csv`
+The stock fixture is a small sample extracted from a local copy of the
+QuoteMedia / Nasdaq Zacks Fundamentals B dataset, as of January 2024. It was
+derived from the QUOTEMEDIA_PRICES and QUOTEMEDIA_TICKERS tables of that
+dataset.
 
 The project sample keeps daily QuoteMedia OHLCV / adjusted OHLCV rows for AAPL,
 MSFT, JPM, XOM, and SPY over calendar year 2022, plus the corresponding ticker
 metadata. The sample is intentionally small so the benchmark remains portable
 while still using real multi-stock market data.
+
+Use of this sample within the project was confirmed by the team as permitted.
+The repository is private, and the sample is included only as a small
+benchmark fixture, not redistributed as a standalone dataset.
 
 ## Vectorized Backtest Tutorial Notebook
 

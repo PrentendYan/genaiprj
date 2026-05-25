@@ -57,7 +57,7 @@ python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --ada
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-live --model gpt-5.4-mini --limit 3 --sentinel-summary
 ```
 
-`/Users/yandong/.npm-global/bin/codex` 这个 npm global 入口在当前机器上不完整，缺少 native Codex binary。运行项目里的 live Codex wrapper 时，应优先使用 Codex Desktop bundled CLI：`/Applications/Codex.app/Contents/Resources/codex`。最简单做法是把 `/Applications/Codex.app/Contents/Resources` 放到 `PATH` 最前面。
+`/Users/<user>/.npm-global/bin/codex` 这个 npm global 入口在当前机器上不完整，缺少 native Codex binary。运行项目里的 live Codex wrapper 时，应优先使用 Codex Desktop bundled CLI：`/Applications/Codex.app/Contents/Resources/codex`。最简单做法是把 `/Applications/Codex.app/Contents/Resources` 放到 `PATH` 最前面。
 
 Live adapter 的模型不要写死。临时测试可以传 `--model gpt-5.4-mini`，最终评估可以传更强模型；也可以用 `QUANT_AUDIT_LIVE_MODEL` 设置默认模型。用 `--limit` 或 `--case-id` 可以控制调用次数和成本。每个 live case 会保存到 `.runtime/runs/<run_id>/<adapter>/<case_id>.json`；一次 CLI evaluation 的汇总结果会保存到 `.runtime/runs/<run_id>/results.json`。
 
