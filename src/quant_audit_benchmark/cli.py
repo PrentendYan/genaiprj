@@ -10,6 +10,7 @@ from pathlib import Path
 from integrations.corax_mcp.sentinel import run_sentinel_summary
 
 from .adapters import ADAPTER_NAMES, DEFAULT_ADAPTER_NAMES
+from .adapters.corax_ablation import ABLATION_CONDITIONS
 from .auditor import PROFILE_THRESHOLDS, evaluate, load_cases
 from .runner import evaluate_adapter
 
@@ -34,6 +35,15 @@ def main() -> int:
     parser.add_argument(
         "--run-dir",
         help="Directory for live adapter run artifacts. Defaults to .runtime/runs/<run_id>.",
+    )
+    parser.add_argument(
+        "--condition",
+        action="append",
+        choices=sorted(ABLATION_CONDITIONS),
+        help=(
+            "CORAX ablation condition. Only valid with --adapter corax-ablation. "
+            "Can be repeated; defaults to full_corax for that adapter."
+        ),
     )
     parser.add_argument(
         "--case-id",
@@ -69,9 +79,24 @@ def main() -> int:
         parser.error("No benchmark cases selected.")
     if args.profile and args.adapter:
         parser.error("--profile and --adapter cannot be used together.")
+    if args.condition and args.adapter != "corax-ablation":
+        parser.error("--condition is only supported with --adapter corax-ablation.")
 
     if args.profile:
         results = [evaluate(cases, args.profile)]
+    elif args.adapter == "corax-ablation":
+        conditions = args.condition or ["full_corax"]
+        results = [
+            evaluate_adapter(
+                cases,
+                args.adapter,
+                model=args.model,
+                sentinel_model=args.sentinel_model,
+                run_dir=args.run_dir,
+                condition=condition,
+            )
+            for condition in conditions
+        ]
     else:
         adapters = [args.adapter] if args.adapter else list(DEFAULT_ADAPTER_NAMES)
         results = [
@@ -79,6 +104,7 @@ def main() -> int:
                 cases,
                 adapter,
                 model=args.model,
+                sentinel_model=args.sentinel_model,
                 run_dir=args.run_dir,
             )
             for adapter in adapters

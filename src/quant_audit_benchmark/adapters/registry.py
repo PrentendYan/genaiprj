@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from .base import ReviewerAdapter
 from .corax import CoraxOfflineAdapter
+from .corax_ablation import CoraxAblationAdapter
 from .corax_live import CoraxLiveAdapter
 from .darf import DarfOfflineAdapter
 from .darf_live import DarfLiveAdapter
@@ -12,13 +13,15 @@ from .deterministic import DeterministicAdapter
 
 
 DEFAULT_ADAPTER_NAMES = ("single_llm_baseline", "darf", "corax")
-ADAPTER_NAMES = (*DEFAULT_ADAPTER_NAMES, "corax-live", "darf-live")
+ADAPTER_NAMES = (*DEFAULT_ADAPTER_NAMES, "corax-live", "darf-live", "corax-ablation")
 
 
 def build_adapter(
     name: str,
     model: str | None = None,
+    sentinel_model: str | None = None,
     run_dir: str | None = None,
+    condition: str | None = None,
 ) -> ReviewerAdapter:
     """Build a reviewer adapter by public benchmark name."""
 
@@ -32,4 +35,11 @@ def build_adapter(
         return CoraxLiveAdapter(model=model, run_dir=run_dir)
     if name == "darf-live":
         return DarfLiveAdapter(model=model, run_dir=run_dir)
+    if name == "corax-ablation":
+        return CoraxAblationAdapter(
+            model=model,
+            sentinel_model=sentinel_model,
+            run_dir=run_dir,
+            condition=condition,
+        )
     raise ValueError(f"Unknown adapter: {name}")

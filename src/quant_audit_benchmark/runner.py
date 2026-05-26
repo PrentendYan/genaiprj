@@ -15,11 +15,19 @@ def evaluate_adapter(
     cases: Iterable[AuditCase],
     adapter_name: str,
     model: str | None = None,
+    sentinel_model: str | None = None,
     run_dir: str | None = None,
+    condition: str | None = None,
 ) -> dict[str, object]:
     """Evaluate a runnable adapter against labeled benchmark cases."""
 
-    adapter = build_adapter(adapter_name, model=model, run_dir=run_dir)
+    adapter = build_adapter(
+        adapter_name,
+        model=model,
+        sentinel_model=sentinel_model,
+        run_dir=run_dir,
+        condition=condition,
+    )
     true_positive = false_positive = false_negative = 0
     failure_count = 0
     total_latency_ms = 0
@@ -61,7 +69,9 @@ def evaluate_adapter(
 
     aggregate = {
         "adapter": adapter_name,
+        "condition": getattr(adapter, "condition", condition),
         "model": getattr(adapter, "model", model),
+        "sentinel_model": getattr(adapter, "sentinel_model", sentinel_model),
         "run_dir": (
             str(getattr(adapter, "run_dir", run_dir))
             if getattr(adapter, "run_dir", run_dir)
@@ -86,6 +96,12 @@ def _write_aggregate_if_live(adapter: object, aggregate: dict[str, object]) -> N
     run_dir = getattr(adapter, "run_dir", None)
     if run_dir is None:
         return
-    path = Path(run_dir) / "results.json"
+    condition = aggregate.get("condition")
+    filename = (
+        f"results-{condition}.json"
+        if isinstance(condition, str) and condition
+        else "results.json"
+    )
+    path = Path(run_dir) / filename
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(aggregate, indent=2, ensure_ascii=False), encoding="utf-8")

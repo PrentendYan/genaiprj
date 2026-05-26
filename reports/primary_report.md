@@ -1,93 +1,126 @@
-# Can LLMs Audit Quant Research?
+# CORAX: Can an Agent Audit Quant Research?
 
 ## Abstract
 
-This project asks whether adversarial AI review can catch the methodological mistakes that quietly invalidate quantitative finance research. We integrate two locally developed adversarial-review designs, DARF and CORAX, into a reproducible benchmark that audits financial backtest code and research claims for known failure modes. Evaluating five reviewer adapters against 45 labeled cases, we find that AI-assisted review is clearly useful. It lifts recall from 0.56 for a naive rule baseline to as high as 1.00 for a live cross-model challenger, but there is no single best adapter. The two strongest configurations sit at opposite ends of a precision-recall tradeoff, and the evaluation surfaces a second, less expected result: in several cases the disagreement between reviewers points not to a reviewer error but to a genuine ambiguity in the benchmark's own labels. We treat that as a finding rather than noise.
+This project asks whether an agentic AI review workflow can catch finance research errors that make backtests look better than they are. The current main artifact is CORAX, a Codex-native adversarial audit workflow with a blind-brief step and an optional Claude Sentinel gate. We package it into a reproducible benchmark over 45 labeled finance audit cases and add a live ablation path that compares four conditions: a single unblinded LLM reviewer, blind brief only, Sentinel without blind brief, and full CORAX. A small live smoke run already shows the value of the blind brief: on a subtle transaction-cost bug, the unblinded reviewer saw the producer claim and added a false unsupported-claim finding, while the blind reviewer returned only the correct missing-costs issue.
 
-## Motivation
+## Problem
 
-AI tools can write a backtest in minutes, and that speed is exactly what makes research mistakes easier to miss. In quantitative finance, the difference between a real edge and an illusory one often lives in a single line of code. A shift in the wrong direction leaks the prediction horizon into the feature matrix. A normalization step applied before the train/test split lets test-period statistics bleed into training. A random split shuffles a time series so the model is trained on the future and tested on the past. A Sharpe ratio computed on gross returns flatters a strategy that would not survive its own transaction costs. None of these errors announces itself; each produces a backtest that looks profitable.
+Quant research is fragile. A one-line error can turn a weak strategy into a persuasive chart. The cases we target are common in financial backtests and AI-written research code:
 
-These are the failure modes a careful human reviewer is trained to catch. The question this project investigates is whether an AI reviewer, and specifically an *adversarial* AI reviewer, one model checking another's work, can catch them reliably enough to be worth integrating into a research workflow.
+- lookahead bias from future returns or negative shifts used as features,
+- full-sample normalization before the train/test split,
+- random splits on time-indexed financial data,
+- strategy returns and Sharpe ratios reported before transaction costs,
+- performance claims made without baselines or robustness evidence.
 
-## System Designs: DARF and CORAX
+The project treats an AI reviewer like a research auditor. The reviewer reads a submitted artifact and emits structured findings. The benchmark then compares those findings to human labels.
 
-The project builds on two adversarial-review designs. Both are motivated by the same observation: a model asked to review its own output tends to endorse it, because it shares the blind spots that produced the work in the first place. Both designs attack that problem, but differently.
+## CORAX Design
 
-**DARF** uses cross-model adversarial review. A producer model creates the research output. A processing step strips the producer's conclusions into a *blind brief*, that is, facts, code, and metrics with the author's judgments removed, and a separate challenger model, drawn from a different model family, reviews that brief against a phase-specific rubric. The defense against groupthink is the heterogeneity of the two models: a challenger trained differently from the producer is more likely to see what the producer missed.
+CORAX stands for Codex-Orchestrated Research Audit eXaminer. The core idea is to separate production, review, and meta-review:
 
-**CORAX** uses a Codex-on-Codex "Santa Method" review. A Codex producer creates the work, an independent Codex instance reviews only a stripped blind brief in an isolated read-only sandbox, and a heterogeneous Claude Sentinel then inspects the exchange for same-family groupthink and shared blind spots. Because producer and reviewer are the same model family here, the Sentinel is the mechanism that compensates for the missing heterogeneity.
+1. A producer artifact is assembled from a benchmark case and a producer claim.
+2. A blind-brief step removes conclusion language and subjective framing.
+3. A Codex reviewer audits only the material it receives.
+4. A Claude Sentinel can inspect the reviewer output for groupthink, missed concerns, and gate risk.
+5. The benchmark saves raw outputs, parsed verdicts, artifacts, errors, latency, and gate decisions.
 
-It is important to be precise about what this report evaluates. The descriptions above are the *complete* designs. The benchmark's live adapters exercise the core review step, a real model acting as an independent reviewer or challenger over a submitted artifact, but not the full orchestration. The blind-brief stripping stage, the Sentinel pass, and the mutation-ladder escalation are implemented in the project but are not part of the benchmarked path. The benchmark therefore measures *real-model single-pass review quality*, which is the component most directly comparable to the offline scanners, and we frame all live results accordingly.
+The "Santa Method" in this repo means Codex-on-Codex adversarial review with a second-model Sentinel. A Codex producer creates or frames the work, an isolated Codex reviewer checks it, and Claude Sentinel watches for same-family blind spots. The name is just a mnemonic from the local workflow: the reviewer is asked to inspect whether the submitted work is sound before it is allowed through the gate.
 
-## Benchmark Design
+## Benchmark
 
-The benchmark contains 45 labeled audit cases. Each case is a small finance-research artifact, such as a feature-engineering snippet, a backtest, a model-training routine, a notebook workflow, or a research write-up, paired with a separate annotation recording its expected issues, severity, and a rationale.
+The benchmark contains 45 labeled cases. Each case has a submitted artifact, a source type, a real-data or real-workflow fixture, and a separate annotation with expected issues and rationale. The project uses:
 
-The cases cover five failure modes plus clean controls: lookahead bias (7 cases), missing transaction costs (10), full-sample normalization leakage (7), random splits applied to time series (7), and unsupported performance claims (5), with 11 clean cases that contain no issue. The clean cases matter as much as the positive ones: they are how the benchmark detects an over-eager reviewer that flags problems where none exist. Several clean cases are deliberate near-misses, the correctly written version of a specific error, so a reviewer that confuses the two is exposed precisely.
+- a bundled BTC historical sample,
+- a QuoteMedia stock sample,
+- two real tutorial notebook workflows,
+- hand-authored finance snippets that target specific audit failures.
 
-Cases are grounded in real market data, real documents, or real finance workflows rather than synthetic fallback data. They reference a bundled BTC historical sample, a QuoteMedia multi-stock price sample, and two real tutorial notebooks. The harness raises an error when a referenced data fixture is missing and never substitutes generated data; the case loader likewise rejects missing labels, duplicate case IDs, and unknown issue types rather than passing them through silently. The intent is that the evaluation target itself is trustworthy before any reviewer is run against it.
+The loader validates fixture existence, empty data, duplicate case IDs, missing labels, and unknown issue types. If a file is missing, the benchmark raises a clear error rather than generating fake data.
 
-## Methodology
+## Main Experiment Design: CORAX Ablation
 
-Five reviewer adapters are evaluated, all through one command-line interface that loads cases, runs the selected adapter, compares its findings against the labels, and reports metrics.
+The live ablation adapter is `corax-ablation`. It tests four conditions against the same labeled cases:
 
-Three adapters run **offline**: they reach a verdict through deterministic scans and rules, call no model, cost nothing, and return identical results on every run. `single_llm_baseline` applies a small set of regular-expression rules and serves as the naive control. `darf` and `corax` invoke the project's deterministic MCP scans for lookahead and normalization leakage.
+| Condition | Producer claim visible? | Blind brief? | Claude Sentinel? | Purpose |
+|---|---:|---:|---:|---|
+| `single_llm` | yes | no | no | baseline live reviewer with producer framing visible |
+| `blind_only` | no | yes | no | isolate the value of blind-brief stripping |
+| `sentinel_unblinded` | yes | no | yes | isolate Sentinel without the blind brief |
+| `full_corax` | no | yes | yes | full CORAX review and gate |
 
-Two adapters run **live**: `corax-live` and `darf-live` spawn a real Codex model that reads each case and produces a structured verdict. Live review is non-deterministic, since the same case can yield slightly different output across runs, and this is itself a reportable property, in contrast to the offline adapters' exact reproducibility.
+This ablation is a better match for the project design than the earlier offline-vs-live comparison. Offline adapters are still useful sanity checks, but they cannot test the core CORAX mechanism because they do not exercise the model reviewer, the framing removal, or the Sentinel handoff.
 
-Metrics are precision, recall, and F1 against the labeled issue set, alongside true/false positives, false negatives, per-run failure count, and latency. A finding is counted correct only when its issue type matches an annotated issue for that case; one case may carry more than one expected issue.
+The planned final experiment uses a weak, low-cost reviewer model for every condition. That makes the experiment a stress test for architecture: if the plain reviewer is shallow or easily influenced by producer framing, the blind-brief and Sentinel layers should have more room to show value. The comparison remains fair because the same reviewer model, case set, labels, and scoring code are used across conditions.
 
-## Results
+## Pilot Live Smoke Result
 
-All five adapters were evaluated against the full 45-case benchmark. The live adapters completed 90 model calls with zero failures, and every case produced a parseable verdict.
+We ran a low-cost pilot smoke test on `cost_variable_declared_not_applied`. The submitted code declares `transaction_cost_bps = 10` but computes `strategy_return` without subtracting costs. This is exactly the kind of semantic bug a simple keyword scanner can miss, because the word "cost" appears in the artifact even though the cost never affects returns.
 
-| Adapter | Mode | Precision | Recall | F1 | TP | FP | FN | Failures | Latency |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| single_llm_baseline | offline | 1.0000 | 0.5556 | 0.7143 | 20 | 0 | 16 | 0 | ~0s |
-| darf | offline | 0.9459 | 0.9722 | 0.9589 | 35 | 2 | 1 | 0 | ~0s |
-| corax | offline | 0.9459 | 0.9722 | 0.9589 | 35 | 2 | 1 | 0 | ~0s |
-| corax-live | live | 0.9722 | 0.9722 | 0.9722 | 35 | 1 | 1 | 0 | 247s |
-| darf-live | live | 0.8182 | 1.0000 | 0.9000 | 36 | 8 | 0 | 0 | 427s |
+| Condition | Predicted Issues | Precision | Recall | F1 | Gate |
+|---|---|---:|---:|---:|---|
+| `single_llm` | `missing_costs`, `unsupported_claim` | 0.5000 | 1.0000 | 0.6667 | `FAIL` |
+| `blind_only` | `missing_costs` | 1.0000 | 1.0000 | 1.0000 | `FAIL` |
+| `sentinel_unblinded` | `missing_costs` | 1.0000 | 1.0000 | 1.0000 | `FAIL` |
+| `full_corax` | `missing_costs` | 1.0000 | 1.0000 | 1.0000 | `NEEDS_REVIEW` due to local Claude quota |
 
-The results separate into three layers.
+The most important observation is not the one-case F1 score. The useful observation is causal: when the producer claim was visible, the reviewer added a false `unsupported_claim` tied to that claim. When the blind brief stripped the claim, the reviewer focused on the code path and reported only the annotated `missing_costs` bug. That supports the blind-brief component directly.
 
-The naive baseline fails *systematically*, not randomly. Its recall of 0.56 reflects whole categories it cannot see: with no rule for full-sample normalization and no rule for unsupported claims, it misses those case types entirely. Its perfect precision is not a strength but a symptom, since it only ever fires on the few hard patterns it knows, so it never produces a false alarm because it rarely fires at all.
+The same smoke also tested failure behavior. Claude Sentinel worked for the `sentinel_unblinded` condition and added secondary concerns, including unannualized Sharpe and residual implementation risk. During `full_corax`, the local Claude account hit its usage limit. The adapter recorded the Sentinel error and returned a `NEEDS_REVIEW` gate decision instead of pretending the Sentinel passed.
 
-The offline scanners close most of that gap. Both `darf` and `corax` reach recall 0.97 by covering the categories the baseline lacks. Notably, the two are *operationally identical* on this benchmark, with the same true positives, the same false positives, and the same single false negative, because in offline mode they share the same deterministic normalization scan. The mechanism difference between DARF and CORAX does not exist offline; it only becomes visible once a real model is in the loop.
+The final selected-case Sentinel experiment should be run after the Claude quota resets. Until then, the pilot should be treated as implementation evidence and experiment-design evidence, not as the final result table.
 
-The live adapters are where DARF and CORAX diverge, and they diverge into a clear precision-recall tradeoff. `corax-live` achieves the highest F1 (0.9722), balancing precision and recall evenly. `darf-live` is the only adapter to reach recall 1.00, catching every annotated issue, but it pays for that completeness with 8 false positives, dropping its precision to 0.82. There is no single best adapter: the right choice depends on whether the review setting can better tolerate a missed problem or a false alarm.
+## Component Benchmark
+
+Before adding the ablation path, we evaluated five adapters over the full 45-case set. This remains useful as a component benchmark.
+
+| Adapter | Mode | Precision | Recall | F1 | TP | FP | FN | Failures |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `single_llm_baseline` | offline | 1.0000 | 0.5556 | 0.7143 | 20 | 0 | 16 | 0 |
+| `darf` | offline | 0.9459 | 0.9722 | 0.9589 | 35 | 2 | 1 | 0 |
+| `corax` | offline | 0.9459 | 0.9722 | 0.9589 | 35 | 2 | 1 | 0 |
+| `corax-live` | live | 0.9722 | 0.9722 | 0.9722 | 35 | 1 | 1 | 0 |
+| `darf-live` | live | 0.8182 | 1.0000 | 0.9000 | 36 | 8 | 0 | 0 |
+
+The offline DARF and CORAX rows are operationally equivalent on this benchmark because they share deterministic scanner behavior. They show that scanner-backed tools can cover many failure modes, but they do not prove the adversarial design. The live adapters show that real model review can catch more semantic structure, while also introducing non-determinism and false positives.
 
 ## Case Analysis
 
-**`cost_variable_declared_not_applied`, the case that separates live from offline.** This backtest declares a transaction-cost variable on its first line and then never subtracts it from strategy returns. The cost is present as a name but absent as an effect. Four of the five adapters, namely the baseline, both offline scanners, and `corax-live`, miss it. They miss it because detecting it requires following the data flow and noticing that a declared variable never reaches the return calculation; pattern matching sees the word "cost" and a deterministic scan has no rule for a dead store. Only `darf-live` catches it. This single case is the clearest evidence in the evaluation that a real model's semantic reading can recover an error that rule-based scanning structurally cannot, and, read the other way, it is also an honest failure case, because the majority of adapters do not catch it. It earns a place in the report as both.
+### Transaction Cost Variable Declared But Not Applied
 
-**A QuoteMedia lookahead case, generalization to a new data domain.** The QuoteMedia cases use multi-stock equity data rather than the single-asset BTC sample. The live adapters detect lookahead bias correctly on these cases, confirming that the result is not an artifact of one dataset or one code style: the reviewers identify the *structure* of the error, a future return used as an input, across a data domain they were not tuned on.
+`cost_variable_declared_not_applied` is the most important case for the current version. A rule scanner sees a cost variable and can be fooled into thinking costs are handled. The live CORAX reviewer follows the data flow: the cost variable is declared, then never subtracted from `strategy_return`. This is the clearest example of a semantic audit capability that the project wants to demonstrate.
 
-**`notebook_transaction_turnover_alignment_ambiguous`, when reviewers disagree with the label.** This case is annotated clean, yet all four non-baseline adapters, both offline scanners and both live models, flag it as lookahead. The case name itself contains the word "ambiguous." When four independent reviewers, including two different model families, unanimously contradict a label, the more likely explanation is that the label sits on a genuine gray area, not that all four reviewers are wrong in the same way. We treat this as the benchmark using reviewer agreement to surface a boundary in its own annotations, and we recommend the annotation be revisited rather than counted as four separate reviewer errors.
+### Blind Brief Removes Producer Framing
 
-## Where AI Helps, Where It Does Not, and Where a Human Is Needed
+The ablation makes the blind brief testable. The producer claim says the backtest correctly accounts for transaction costs because a cost variable is declared. In `single_llm`, that claim remains visible and creates an extra unsupported-claim finding. In `blind_only`, the claim is stripped and the reviewer returns the cleaner issue set.
 
-**Where it helps.** AI review delivers a large, real gain over naive rule checking, lifting recall from 0.56 to as high as 1.00, and the gain is concentrated exactly where rules are weakest. The `cost_variable_declared_not_applied` case shows the qualitative version of this: a live model can catch a semantic error, a declared-but-unused variable, that no deterministic scan in the benchmark detects.
+### Ambiguous Notebook Turnover Case
 
-**Where it does not help.** AI review does not automatically resolve the DARF-versus-CORAX design question. Offline, the two are indistinguishable on this benchmark because they share a scanner; the adversarial machinery that is supposed to differentiate them is not exercised in the offline path. The benchmark can compare detection coverage, but it cannot, in its current form, adjudicate which adversarial *design* is better.
+`notebook_transaction_turnover_alignment_ambiguous` remains a useful failure case for the benchmark. It uses a negative shift to align transaction-cost timing rather than to build a predictive feature. Earlier component runs showed that several adapters flag it as lookahead anyway. This is a label-boundary problem that should be discussed honestly in the defense.
 
-**Where a human is needed.** The evaluation's most recurring need for human judgment is taxonomy. `darf-live`'s false positives are concentrated in a single pattern: it labels random-split cases as lookahead in addition to their annotated temporal-split issue. That overlap is defensible, since randomly splitting a time series *is* a form of forward-information leakage, so the "error" is really a disagreement about whether two labels should be distinct. Deciding that, and deciding the status of the ambiguous case above, are annotation-design choices that a human must make. The AI reviewers can expose the boundary; they cannot define it.
+## What Works
 
-## Limitations
+The repository is now runnable from a fresh clone for offline evaluation. It also has mock tests for the live ablation path, so the core logic can be verified without spending model budget. The live smoke confirms that the Codex reviewer can catch a semantic transaction-cost bug and that the blind brief changes reviewer behavior in the expected direction.
 
-Several limitations bound these results. First, the offline DARF and CORAX adapters are operationally equivalent on this benchmark, so offline results speak to detection coverage rather than to either design's adversarial mechanism. Second, the benchmarked live path exercises single-pass model review only; the full DARF and CORAX orchestration, including blind-brief stripping, the Sentinel pass, and mutation-ladder escalation, is implemented but not evaluated here. Third, live review is non-deterministic, so individual live numbers can shift on re-runs and should be read as representative rather than exact. Fourth, the benchmark's label taxonomy has at least one contested boundary, between lookahead bias and temporal-split errors, that affects measured precision. Fifth, at 45 cases the benchmark is large enough to show clear category-level patterns but still modest for fine-grained claims about individual adapters.
+## What Still Needs Work
 
-## Future Work Roadmap
+The full selected-case ablation should be run after the local Claude quota resets or with a configured cheaper Sentinel model. The detailed run plan is in `docs/corax_ablation_experiment_plan.md`. The recommended set is:
 
-The next version should turn the current component benchmark into a fuller agent-workflow benchmark. The most important engineering step is to connect the existing blind-brief stripping, Sentinel review, and mutation-ladder logic into a repeatable multi-step run path, then evaluate that full path against the same labeled cases. The current live adapters already show that real model review is useful; the unanswered question is whether full orchestration improves reliability beyond single-pass review.
+- `btc_future_return_feature`,
+- `global_standard_scaler_fit_transform`,
+- `random_split_time_series`,
+- `cost_variable_declared_not_applied`,
+- `unsupported_claim`,
+- `honest_shifted_momentum`,
+- `notebook_transaction_turnover_alignment_ambiguous`,
+- `quotemedia_future_winner_signal`,
+- `quotemedia_train_window_scaler_clean`.
 
-The second priority is test coverage for CORAX MCP. DARF MCP already has a focused test suite, while CORAX still needs comparable tests for workspace initialization, producer/reviewer subprocess wrappers, Sentinel wrapper behavior, mutation selection, mutation application, lessons DB integration, and failure handling. Those tests should use mocks for model calls so that normal CI remains free.
+The next evaluation should report per-condition precision, recall, F1, false positives, false negatives, gate decisions, Sentinel errors, and two or three case narratives. That would turn the smoke test into the final experiment table.
 
-The third priority is benchmark expansion and label refinement. The current 45 cases are enough to show category-level behavior, but the ambiguous notebook turnover case and `darf-live` temporal-split false positives show that the taxonomy itself needs a formal adjudication pass. Future labels should explicitly distinguish predictive lookahead, execution-alignment shifts, random temporal splits, and mixed cases where more than one issue type is defensible.
-
-The fourth priority is operational polish. Live artifacts already save raw output, parsed verdicts, latency, and errors, but cost estimates, warning classification, schema validation, and retry taxonomy should be stricter. A final product version should also include a one-command evaluation script that runs offline adapters by default and live adapters only when credentials and budget controls are explicitly provided.
+The CORAX MCP layer also needs the same level of direct unit coverage as the DARF MCP layer. Current tests cover the benchmark, adapter logic, live wrapper behavior, Sentinel summary wrapper, and ablation handoff with mocks. Future tests should cover workspace initialization, mutation selection, mutation ladder behavior, lessons DB writes, and failure recovery.
 
 ## What AI Would Not Produce Alone
 
-The central human contribution in this project is not the code that runs the reviewers but the evaluation design around them: choosing finance-specific failure modes that matter, writing labels and rationales, deciding what counts as evidence of an error, building clean controls as deliberate near-misses, and keeping reproducible benchmark results separate from claims about the adversarial designs. The evaluation itself makes the point. An AI reviewer can flag a case; it cannot decide whether its disagreement with a label means the reviewer is wrong or the label is. That judgment, and the decision to treat reviewer consensus as a signal about the benchmark rather than noise to be scored away, is the part of this work that a model would not have produced on its own.
+The main human contribution is the evaluation design: choosing finance-specific failure modes, building clean near-miss controls, deciding which errors count as labels, separating scanner evidence from live-agent evidence, and noticing when a reviewer disagreement points to an ambiguous label rather than a simple model mistake. The project uses AI tools heavily, but the benchmark taxonomy and the interpretation of failure cases require finance judgment.

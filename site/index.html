@@ -199,20 +199,20 @@
 <div class="wrap">
 
   <header>
-    <div class="kicker reveal">Generative AI &mdash; Final Project Report</div>
-    <h1 class="reveal">Can LLMs <em>Audit</em><br>Quant Research?</h1>
-    <p class="standfirst reveal">An adversarial AI reviewer reads a backtest the way a careful quant would, and looks for the one line that turns a losing strategy into a winning chart.</p>
+    <div class="kicker reveal">CORAX &mdash; Final Project Report</div>
+    <h1 class="reveal">Can an Agent <em>Audit</em><br>Quant Research?</h1>
+    <p class="standfirst reveal">A blind-brief ablation tests whether an AI reviewer can ignore producer framing and catch the line that invalidates a backtest.</p>
     <div class="byline reveal">
       <span>45 labeled cases</span>
-      <span>5 reviewer adapters</span>
-      <span>90 live model calls, 0 failures</span>
+      <span>4 CORAX ablation conditions</span>
+      <span>low-cost live smoke run</span>
     </div>
   </header>
 
   <section>
     <h2 data-n="1">The Question</h2>
     <p class="lead"><span class="drop">A</span>I tools can write a backtest in minutes, and that speed is exactly what makes research mistakes easier to miss. A shift in the wrong direction, a normalization step before the split, a random shuffle of a time series, a Sharpe ratio computed gross of costs: none of these errors announces itself, and each produces a backtest that looks profitable.</p>
-    <p>This project asks whether an <strong>adversarial AI reviewer</strong>, one model checking another model's work, can catch those mistakes reliably enough to be worth putting into a research workflow. It builds two designs, <strong>DARF</strong> and <strong>CORAX</strong>, into a reproducible benchmark and measures them against a naive rule baseline.</p>
+    <p>This project asks whether <strong>CORAX</strong>, a Codex reviewer with a blind brief and optional Claude Sentinel, can catch those mistakes while avoiding producer-framing bias.</p>
   </section>
 
   <section>
@@ -227,24 +227,23 @@
   </section>
 
   <section>
-    <h2 data-n="3">Results</h2>
-    <p>Five adapters, full 45-case benchmark. Two run <span class="mono">offline</span> as deterministic scans; two run <span class="mono">live</span>, spawning a real model per case.</p>
+    <h2 data-n="3">Ablation Smoke</h2>
+    <p>One low-cost live run on the subtle transaction-cost case where a variable is declared but never applied to strategy returns.</p>
     <div class="tablewrap">
       <table>
-        <caption>Precision / Recall / F1 against the labeled issue set</caption>
+        <caption>CORAX ablation on cost_variable_declared_not_applied</caption>
         <thead>
-          <tr><th>Adapter</th><th>Mode</th><th>Prec.</th><th>Recall</th><th>F1</th><th>FP</th><th>FN</th></tr>
+          <tr><th>Condition</th><th>Blind</th><th>Sentinel</th><th>Prec.</th><th>Recall</th><th>F1</th><th>Gate</th></tr>
         </thead>
         <tbody>
-          <tr><td>single_llm_baseline</td><td><span class="tag">offline</span></td><td>1.000</td><td>0.556</td><td>0.714</td><td>0</td><td>16</td></tr>
-          <tr><td>darf</td><td><span class="tag">offline</span></td><td>0.946</td><td>0.972</td><td>0.959</td><td>2</td><td>1</td></tr>
-          <tr><td>corax</td><td><span class="tag">offline</span></td><td>0.946</td><td>0.972</td><td>0.959</td><td>2</td><td>1</td></tr>
-          <tr><td>corax-live</td><td><span class="tag live">live</span></td><td>0.972</td><td>0.972</td><td class="best">0.972</td><td>1</td><td>1</td></tr>
-          <tr><td>darf-live</td><td><span class="tag live">live</span></td><td>0.818</td><td class="best">1.000</td><td>0.900</td><td>8</td><td>0</td></tr>
+          <tr><td>single_llm</td><td>no</td><td>no</td><td>0.500</td><td>1.000</td><td>0.667</td><td>FAIL</td></tr>
+          <tr><td>blind_only</td><td>yes</td><td>no</td><td class="best">1.000</td><td>1.000</td><td class="best">1.000</td><td>FAIL</td></tr>
+          <tr><td>sentinel_unblinded</td><td>no</td><td>yes</td><td class="best">1.000</td><td>1.000</td><td class="best">1.000</td><td>FAIL</td></tr>
+          <tr><td>full_corax</td><td>yes</td><td>yes</td><td class="best">1.000</td><td>1.000</td><td class="best">1.000</td><td>NEEDS_REVIEW</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The baseline fails <em>systematically</em>: with no rule for normalization or unsupported claims, it misses those categories entirely. AI review closes the gap, lifting recall from <strong>0.56</strong> to as high as <strong>1.00</strong>. But the two strongest adapters sit at opposite ends of a precision&ndash;recall tradeoff. There is no single best reviewer; the right one depends on whether a setting can better tolerate a missed problem or a false alarm.</p>
+    <p>The unblinded single-LLM condition saw the producer's claim and added a false unsupported-claim finding. The blind-only condition stripped that claim and returned only the annotated missing-costs bug. Full CORAX caught the same bug, then failed closed because the local Claude account hit its usage limit during Sentinel review.</p>
   </section>
 
   <section>
@@ -253,22 +252,22 @@
       <div class="finding">
         <div class="num">01</div>
         <div>
-          <h3>A live model caught what no scanner could</h3>
-          <p>One backtest declares a transaction-cost variable, then never uses it. Four of five adapters miss this dead store. Only <code>darf-live</code> reads the data flow and catches it, the clearest evidence that semantic review recovers errors rule-based scanning structurally cannot.</p>
+          <h3>A live reviewer followed the data flow</h3>
+          <p>The key case declares a transaction-cost variable, then never subtracts it from returns. CORAX live review flags the missing cost application instead of being fooled by the word <code>cost</code>.</p>
         </div>
       </div>
       <div class="finding">
         <div class="num">02</div>
         <div>
-          <h3>Offline DARF and CORAX are indistinguishable</h3>
-          <p>On this benchmark the two offline adapters share a scanner and produce identical results. The mechanism difference between the designs only becomes visible once a real model is in the loop.</p>
+          <h3>The blind brief changed behavior</h3>
+          <p>When the producer claim was visible, the reviewer added an extra unsupported-claim false positive. After stripping the claim, the reviewer produced the cleaner issue set.</p>
         </div>
       </div>
       <div class="finding">
         <div class="num">03</div>
         <div>
-          <h3>When four reviewers outvote the label</h3>
-          <p>One case annotated <em>clean</em> is flagged by all four non-baseline adapters. When independent reviewers, across two model families, unanimously contradict a label, the benchmark is using their agreement to surface an ambiguity in its own annotations.</p>
+          <h3>The Sentinel fails closed</h3>
+          <p>When Claude Sentinel is unavailable or over quota, the adapter records the error and returns <code>NEEDS_REVIEW</code>. The workflow keeps the missing meta-review visible.</p>
         </div>
       </div>
     </div>
@@ -279,15 +278,15 @@
     <div class="verdict">
       <div class="vcol help">
         <h3>Where it helps</h3>
-        <p>A large, real gain over naive rule checking, concentrated exactly where rules are weakest: recall climbs from 0.56 to 1.00, and a live model catches semantic errors no deterministic scan detects.</p>
+        <p>Semantic review can catch code-path bugs that keyword scanners miss, and blind briefs reduce producer-framing effects.</p>
       </div>
       <div class="vcol no">
         <h3>Where it does not</h3>
-        <p>It does not settle the DARF-versus-CORAX design question. Offline, the adversarial machinery meant to differentiate them is never exercised, so the benchmark compares coverage, not design.</p>
+        <p>A one-case smoke run is evidence of feasibility, not a final statistical claim. The selected-case ablation still needs a full run.</p>
       </div>
       <div class="vcol human">
         <h3>Where a human is needed</h3>
-        <p>Taxonomy. Whether random-split and lookahead are one issue or two, and how to rule on an ambiguous case, are annotation choices. AI can expose the boundary; it cannot define it.</p>
+        <p>Finance taxonomy still matters. Ambiguous shifts, cost timing, and label boundaries need human adjudication.</p>
       </div>
     </div>
   </section>

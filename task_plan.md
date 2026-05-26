@@ -1,19 +1,20 @@
 # Task Plan
-**Feature:** DARF/CORAX quant audit scaffold
-**Plan file:** docs/plans/2026-05-11-integrated-darf-corax-final-project.md
-**Status:** working_draft
+
+**Feature:** CORAX ablation final-project path
 
 ## Tasks
 
-- [x] Collect the local DARF/CORAX structure into this project folder.
-- [x] Add a small runnable scaffold.
-- [x] Add initial labeled cases and tests as a starting point.
-- [x] Mark draft report/site files as placeholders.
-- [x] Add runnable offline DARF/CORAX benchmark adapters.
-- [x] Expand tests beyond the deterministic scaffold.
-- [ ] Improve live agent orchestration.
-- [ ] Decide final project framing later.
+- [x] Keep the existing 45-case benchmark runnable from a fresh clone.
+- [x] Preserve DARF code as supporting infrastructure.
+- [x] Refocus README, report, site, and architecture around CORAX.
+- [x] Add `corax-ablation` with `single_llm`, `blind_only`, `sentinel_unblinded`, and `full_corax`.
+- [x] Add mock tests for blind brief, Sentinel handoff, and gate behavior.
+- [x] Write the weak-model experiment design in `docs/corax_ablation_experiment_plan.md`.
+- [ ] Run selected-case non-Sentinel ablations with a weak reviewer model.
+- [ ] Run selected-case Sentinel ablations after Claude quota resets.
+- [ ] Update report and site with final selected-case ablation table.
+- [ ] Decide whether to commit curated runtime summaries.
 
 ## Current Status
 
-The folder is ready as a runnable working draft with offline DARF/CORAX adapters.
+The project is ready for a delayed live ablation run. Normal tests do not require model calls, and the final live experiment can be run later with configurable weak models.

@@ -27,7 +27,14 @@ class AdapterTests(unittest.TestCase):
     def test_registry_builds_all_public_adapters(self) -> None:
         self.assertEqual(
             set(ADAPTER_NAMES),
-            {"single_llm_baseline", "darf", "corax", "corax-live", "darf-live"},
+            {
+                "single_llm_baseline",
+                "darf",
+                "corax",
+                "corax-live",
+                "darf-live",
+                "corax-ablation",
+            },
         )
         self.assertEqual(set(DEFAULT_ADAPTER_NAMES), {"single_llm_baseline", "darf", "corax"})
         for name in ADAPTER_NAMES:

@@ -1,6 +1,6 @@
-# DARF / CORAX Content Map
+# CORAX / DARF Content Map
 
-This file maps the DARF/CORAX logic that has been moved into the project.
+This file maps the local adversarial-review logic that has been moved into the project. CORAX is the main final-project path. DARF remains as supporting infrastructure and historical comparison code.
 
 ## DARF
 
@@ -51,10 +51,12 @@ Confirmed behavior:
 
 - CORAX runtime paths are configurable and default to `.runtime/corax/` and `.runtime/shared/`.
 - `corax-live` can call a live Codex reviewer from the benchmark CLI.
+- `corax-ablation` can compare `single_llm`, `blind_only`, `sentinel_unblinded`, and `full_corax`.
 - `--sentinel-summary` can run a Claude Sentinel meta-review over the final evaluation summary.
 
 ## Remaining Alignment Work
 
+- Run the selected-case CORAX ablation after Claude quota resets.
 - Expand CORAX MCP tests to match DARF MCP coverage.
 - Add direct tests for CORAX producer/reviewer subprocess wrappers.
 - Improve benchmark-to-MCP schema validation and cost tracking.

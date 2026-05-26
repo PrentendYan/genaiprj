@@ -1,106 +1,62 @@
-# DARF / CORAX Architecture
+# CORAX Architecture
 
 ## Overview
 
-The repository has two connected layers:
+The repository has three layers:
 
-- Benchmark layer: `src/quant_audit_benchmark/` loads cases, runs reviewer adapters, and computes precision / recall / F1.
-- Agent layer: `integrations/`, `skills/`, and `commands/` contain the DARF/CORAX review mechanisms. Parts of this layer are connected to the benchmark through offline and live adapters.
+- Benchmark layer: `src/quant_audit_benchmark/` loads cases, runs adapters, computes metrics, and writes run artifacts.
+- CORAX agent layer: `integrations/corax_mcp/`, `skills/corax/`, and `commands/corax.md` contain blind-brief, reviewer, Sentinel, gate, mutation, and lesson logic.
+- Supporting DARF layer: `integrations/darf_mcp/`, `skills/darf/`, and `commands/darf.md` remain available for comparison and shared infrastructure, but the current project framing is CORAX-first.
 
 ```mermaid
 flowchart TD
     A["benchmark_cases/cases.json"] --> B["AuditCase loader"]
     B --> C["ReviewerAdapter"]
-    C --> D["Findings"]
-    D --> E["Compare with labels"]
-    E --> F["Metrics and failure analysis"]
-
-    G["DARF MCP tools"] --> C
-    H["CORAX MCP tools"] --> C
-    I["skills + commands"] --> G
-    I --> H
-```
-
-## DARF Architecture
-
-DARF is a cross-model adversarial review framework.
-
-Typical flow:
-
-- A producer creates research output.
-- The workflow strips conclusions into a blind brief that keeps facts, code, data, and metrics.
-- A Codex challenger reviews only the blind brief and rubric.
-- A gate decides whether to advance, fix, escalate, or record warnings.
-- Useful failures are written into a lessons DB for later reuse.
-
-Project locations:
-
-- MCP server: `integrations/darf_mcp/`
-- Skill: `skills/darf/`
-- Command orchestration: `commands/darf.md`
-- Portable config: `integrations/darf_mcp/config.py`
-
-DARF currently has a runnable test suite under `integrations/darf_mcp/tests`.
-
-## CORAX Architecture
-
-CORAX is a Codex-native adversarial review framework.
-
-Typical flow:
-
-- A Codex Producer creates phase output.
-- `brief_stripper` removes conclusion framing and creates a blind brief.
-- A Codex Reviewer audits the blind brief in an isolated context.
-- After reviewer PASS, Claude Sentinel checks for same-family groupthink and shared blind spots.
-- The gate decides whether to advance, enter a fix cycle, climb the mutation ladder, or escalate.
-
-Project locations:
-
-- MCP server: `integrations/corax_mcp/`
-- Skill: `skills/corax/`
-- Schemas: `skills/corax/schemas/`
-- Command orchestration: `commands/corax.md`
-- Portable config: `integrations/corax_mcp/config.py`
-
-CORAX MCP code has been migrated and compiles, but it still needs a fuller test suite.
-
-## Benchmark Adapters
-
-`src/quant_audit_benchmark/adapters/` currently includes five adapters:
-
-- `single_llm_baseline`
-- `darf`
-- `corax`
-- `corax-live`
-- `darf-live`
-
-`single_llm_baseline` is a deterministic baseline. `darf` calls the DARF normalization scan. `corax` calls CORAX lookahead scan, normalization scan, and blind brief stripper. `corax-live` and `darf-live` call local Codex-backed live reviewers and store raw artifacts.
-
-All adapters normalize into the same `ReviewResult` shape:
-
-```mermaid
-flowchart LR
-    A["AuditCase"] --> B["ReviewerAdapter"]
-    B --> C["Raw adapter output"]
     C --> D["Normalized findings"]
-    D --> E["ReviewResult"]
-    E --> F["Metrics"]
+    D --> E["Compare with annotations"]
+    E --> F["Metrics and artifacts"]
+
+    G["Producer framing"] --> H["Phase output"]
+    H --> I["Blind brief stripper"]
+    I --> J["Codex reviewer"]
+    J --> K["Claude Sentinel"]
+    K --> L["Gate decision"]
+
+    H --> C
+    J --> C
+    L --> C
 ```
 
-## Runtime Data
+## CORAX Main Path
 
-Runtime output should be written to `.runtime/` or to paths configured through environment variables.
+The main live adapter is `corax-ablation`.
 
-The project should not write to:
+It builds a producer-style phase output from a case and a producer claim. Depending on the selected condition, it either sends that phase output directly to the reviewer or first passes it through `integrations/corax_mcp/workspace/brief_stripper.py`.
 
-- Personal Claude/Codex configuration directories.
-- External DB paths.
-- External log paths.
-- API keys or `.env` files.
+The reviewer is the Codex Santa Method wrapper in `integrations/corax_mcp/reviewer/codex_santa.py`. It returns schema-shaped JSON with a verdict, issue list, confidence, and counter-arguments.
 
-## Core Interface
+When Sentinel is enabled, the adapter calls `integrations/corax_mcp/sentinel/claude_sentinel.py` with the reviewer verdict and review material excerpt. The Sentinel result affects the gate decision:
 
-The benchmark layer depends on a small adapter interface:
+- reviewer errors become `ERROR`,
+- reviewer findings become `FAIL`,
+- clean reviewer output becomes `PASS`,
+- Sentinel errors or high groupthink risk become `NEEDS_REVIEW`,
+- Sentinel hard veto becomes `FAIL`.
+
+## Ablation Conditions
+
+| Condition | Producer claim visible? | Blind brief? | Claude Sentinel? |
+|---|---:|---:|---:|
+| `single_llm` | yes | no | no |
+| `blind_only` | no | yes | no |
+| `sentinel_unblinded` | yes | no | yes |
+| `full_corax` | no | yes | yes |
+
+This is the project mechanism under test. The previous offline adapter comparison remains a component benchmark and reproducibility check.
+
+## Adapter Interface
+
+All adapters normalize into the same shape:
 
 ```python
 class ReviewerAdapter:
@@ -108,4 +64,48 @@ class ReviewerAdapter:
         ...
 ```
 
-This keeps the benchmark independent from whether the underlying reviewer is a regex baseline, deterministic MCP tool, Codex CLI call, DARF challenger, or CORAX Sentinel path.
+`ReviewResult` contains:
+
+- `reviewer`: adapter name,
+- `findings`: normalized issue findings,
+- `raw_output`: adapter-specific artifact details.
+
+The runner compares `findings` to `benchmark_cases/annotations.json`.
+
+## Public Adapters
+
+- `single_llm_baseline`: deterministic naive rule baseline.
+- `darf`: offline DARF scanner-backed adapter.
+- `corax`: offline CORAX scanner-backed adapter with blind-brief stripping.
+- `corax-live`: single-pass live Codex reviewer.
+- `darf-live`: live DARF challenger path.
+- `corax-ablation`: main CORAX ablation path.
+
+The default CLI run uses only the offline adapters. Live adapters require local CLI credentials.
+
+## Runtime Artifacts
+
+`corax-ablation` writes:
+
+```text
+.runtime/runs/<run-id>/corax-ablation/<condition>/<case-id>/phase-output.md
+.runtime/runs/<run-id>/corax-ablation/<condition>/<case-id>/blind-brief.md
+.runtime/runs/<run-id>/corax-ablation/<condition>/<case-id>/artifact.json
+.runtime/runs/<run-id>/corax-ablation/<condition>/<case-id>/sentinel/sentinel-summary.json
+.runtime/runs/<run-id>/results-<condition>.json
+```
+
+Runtime data should stay in `.runtime/` or in configured runtime paths. Do not commit unreviewed runtime output, credentials, personal Claude/Codex configuration, local logs, or local SQLite databases.
+
+## Configuration
+
+Personal paths are controlled by environment variables. The most relevant live-run variables are:
+
+- `QUANT_AUDIT_CODEX_RESOURCE_DIR`,
+- `QUANT_AUDIT_LIVE_MODEL`,
+- `QUANT_AUDIT_SENTINEL_MODEL`,
+- `CORAX_DATA_DIR`,
+- `CORAX_SKILL_DIR`,
+- `CORAX_LESSONS_DB_PATH`.
+
+See `CONFIGURATION.md` for detailed setup notes.

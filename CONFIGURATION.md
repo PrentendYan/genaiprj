@@ -1,6 +1,6 @@
 # Configuration
 
-The repository contains the main DARF/CORAX MCP code and skill documentation. Personal machine paths are not hard-coded in the codebase. Runtime locations are controlled by environment variables and default to local project paths.
+The repository contains the main CORAX project path plus supporting DARF MCP code and skill documentation. Personal machine paths are not hard-coded in the codebase. Runtime locations are controlled by environment variables and default to local project paths.
 
 ## Default Directories
 
@@ -45,29 +45,27 @@ The offline benchmark and offline adapters do not require Codex CLI or Claude CL
 
 ## Local Codex and Claude CLI
 
-Live DARF, live CORAX, and Claude Sentinel runs require local CLI access and valid credentials. The development machine was validated with the Codex Desktop bundled CLI:
+Live CORAX ablations, live DARF comparison runs, and Claude Sentinel runs require local CLI access and valid credentials. The development machine was validated with the Codex Desktop bundled CLI:
 
 ```bash
 export PATH="/Applications/Codex.app/Contents/Resources:$PATH"
 codex exec --ephemeral --sandbox read-only -m gpt-5.4-mini "Return exactly: CODEX_SMOKE_OK"
 claude auth status
 claude -p "Return exactly: CLAUDE_SMOKE_OK" --output-format text --no-session-persistence --tools "" --max-budget-usd 0.20
-python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-live --model gpt-5.4-mini --limit 1
-python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter darf-live --model gpt-5.4-mini --limit 1
-python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-live --model gpt-5.4-mini --limit 3 --sentinel-summary
+python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-ablation --condition single_llm --condition blind_only --model gpt-5.4-mini --case-id cost_variable_declared_not_applied
 ```
 
 The npm-global `codex` entry at `/Users/<user>/.npm-global/bin/codex` was incomplete on the development machine because it lacked the native Codex binary. Prefer `/Applications/Codex.app/Contents/Resources/codex` when using Codex Desktop.
 
-Live adapter models are configurable by design. Use `--model gpt-5.4-mini` for low-cost smoke tests and pass a stronger model for final evaluation. `QUANT_AUDIT_LIVE_MODEL` can set the default model. Use `--limit` or `--case-id` to control cost and runtime.
+Live adapter models are configurable by design. Use a weak or low-cost reviewer model for the main CORAX ablation stress test, then optionally run a stronger-model confirmation check. `QUANT_AUDIT_LIVE_MODEL` can set the default reviewer model. Use `--limit` or `--case-id` to control cost and runtime.
 
-Each live case is saved to `.runtime/runs/<run_id>/<adapter>/<case_id>.json`. Aggregate CLI output is saved to `.runtime/runs/<run_id>/results.json`.
+Each `corax-ablation` case is saved to `.runtime/runs/<run_id>/corax-ablation/<condition>/<case_id>/artifact.json`. Aggregate condition output is saved to `.runtime/runs/<run_id>/results-<condition>.json`.
 
 Live adapter failures are written to the output and artifact `error` field. Covered failure modes include missing Codex CLI, subprocess timeout, spawn failure, invalid JSON, and schema mismatch. The live adapters do not silently fall back to offline results.
 
-`--sentinel-summary` calls `claude -p` once after the evaluation summary is available. It saves `sentinel-summary.json` with raw output, parsed JSON, latency, model, and error fields.
+`corax-ablation` Sentinel conditions and `--sentinel-summary` call `claude -p`. They save `sentinel-summary.json` with raw output, parsed JSON, latency, model, and error fields.
 
-Claude CLI may not see local login state inside a sandbox. When checking whether Claude is available, use `claude auth status` in the local shell. The development machine was validated with `authMethod` set to `claude.ai`. Set the Sentinel model with `--sentinel-model` or `QUANT_AUDIT_SENTINEL_MODEL`; otherwise the Claude CLI default model is used.
+Claude CLI may not see local login state inside a sandbox. When checking whether Claude is available, use `claude auth status` in the local shell. The development machine was validated with `authMethod` set to `claude.ai`, but the local account later hit a usage limit. Run non-Sentinel ablations first, then run Sentinel conditions after the quota resets. Set the Sentinel model with `--sentinel-model` or `QUANT_AUDIT_SENTINEL_MODEL`; otherwise the Claude CLI default model is used.
 
 ## DARF MCP Tests
 

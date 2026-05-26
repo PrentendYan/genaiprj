@@ -1,0 +1,11 @@
+{
+  "btc_future_return_feature": "We conclude this feature set is ready for approval because the model uses the most informative BTC return signal and validates the trading hypothesis.",
+  "global_standard_scaler_fit_transform": "We conclude this scaling approach is methodologically sound because StandardScaler improves feature quality before the train/test comparison.",
+  "random_split_time_series": "We conclude the shuffled split validates model generalization because randomization gives a fair train/test sample.",
+  "cost_variable_declared_not_applied": "We conclude this backtest validates the strategy and correctly accounts for transaction costs because a transaction_cost_bps variable is declared.",
+  "unsupported_claim": "We conclude the agentic strategy is state-of-the-art and beats alternatives because the equity curve is visually compelling.",
+  "honest_shifted_momentum": "We conclude this shifted momentum example is ready for approval because it uses lagged information and subtracts turnover costs.",
+  "notebook_transaction_turnover_alignment_ambiguous": "We conclude this transaction-cost notebook is valid because the negative shift only aligns turnover with execution timing.",
+  "quotemedia_future_winner_signal": "We conclude this stock-selection strategy validates the ranking method because the future-winner signal produces clear portfolio returns.",
+  "quotemedia_train_window_scaler_clean": "We conclude this scaler workflow is ready for approval because the transform is fit inside the chronological training window."
+}
