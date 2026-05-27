@@ -7,11 +7,10 @@ The project is built around a concrete finance problem: code and writeups for ba
 ## What This Project Does
 
 - Builds a labeled benchmark of 45 finance audit cases.
-- Uses real market fixtures and real notebook workflow artifacts; it does not generate synthetic fallback data.
+- Uses real market fixtures and real notebook workflow artifacts.
 - Provides a runnable offline benchmark that works immediately after cloning.
 - Provides live Codex/Claude paths for CORAX reviewer experiments.
-- Adds a CORAX ablation adapter with three main experiment arms: `single_llm`, `codex_codex`, and `codex_claude`.
-- Keeps DARF code in the repository as supporting infrastructure and historical comparison, while the current project framing is CORAX-first.
+- Adds a CORAX ablation adapter with four experiment arms: `single_llm`, `blind_only`, `codex_codex`, and `codex_claude`.
 
 ## Repository Layout
 
@@ -22,10 +21,9 @@ genaiprj/
   docs/                     # architecture, handoff notes, coverage summaries
   integrations/
     corax_mcp/              # CORAX MCP logic: reviewer, Sentinel, blind brief, mutation tools
-    darf_mcp/               # supporting DARF MCP logic and tests
   reports/                  # primary written report
   site/                     # static audience-facing page
-  skills/                   # CORAX and DARF skill references
+  skills/corax/             # CORAX skill references
   src/quant_audit_benchmark/# benchmark CLI, adapters, runner
   tests/                    # unit and mock-agent tests
 ```
@@ -40,13 +38,14 @@ CORAX is a Codex-native adversarial review pattern:
 4. A second agent can review the exchange for groupthink and missed concerns.
 5. The benchmark records findings, raw model output, artifacts, latency, errors, and gate decisions.
 
-The main ablation isolates the value of the second agent:
+The main ablation separates producer-framing removal from second-agent review:
 
 | Condition | Second agent | Blind brief? | Current status |
 |---|---|---:|---|
 | `single_llm` | none | no | baseline |
-| `codex_codex` | Codex meta-reviewer | yes | runnable now |
-| `codex_claude` | Claude Sentinel | yes | run after Claude quota resets |
+| `blind_only` | none | yes | completed on the selected set |
+| `codex_codex` | Codex meta-reviewer | yes | completed on the selected set |
+| `codex_claude` | Claude Sentinel | yes | completed on the selected set |
 
 ## Quick Start
 
@@ -58,17 +57,16 @@ python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
 python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax
 ```
 
-With no explicit `--adapter`, the CLI runs the offline adapters: `single_llm_baseline`, `darf`, and `corax`.
+With no explicit `--adapter`, the CLI runs only the offline CORAX sanity path: `single_llm_baseline` and `corax`. It does not run live model calls.
 
 Expected offline metrics:
 
 | Adapter | Precision | Recall | F1 |
 |---|---:|---:|---:|
 | `single_llm_baseline` | 1.0000 | 0.5556 | 0.7143 |
-| `darf` | 0.9459 | 0.9722 | 0.9589 |
 | `corax` | 0.9459 | 0.9722 | 0.9589 |
 
-The offline `darf` and `corax` adapters are deterministic scanner adapters. They are useful reproducibility checks, but they are not the main CORAX ablation evidence.
+The offline `corax` adapter is a deterministic scanner-backed sanity check. It is useful for reproducibility, but it is not the main CORAX ablation evidence.
 
 ## Run CORAX Ablations
 
@@ -82,6 +80,7 @@ python -m src.quant_audit_benchmark.cli \
   --model gpt-5.4-mini \
   --case-id cost_variable_declared_not_applied \
   --condition single_llm \
+  --condition blind_only \
   --condition codex_codex \
   --run-dir .runtime/runs/corax-ablation-smoke
 ```
@@ -100,29 +99,30 @@ Aggregate metrics are written as:
 .runtime/runs/<run-id>/results-<condition>.json
 ```
 
-If Claude CLI is unavailable, logged out, or over quota, `codex_claude` records a Sentinel error and returns a `NEEDS_REVIEW` gate decision. It does not silently fall back to a fake Sentinel.
+`codex_claude` records the Claude Sentinel output as a separate artifact.
 
-## Current Codex-Codex Smoke Result
+## Current Selected-Case Result
 
-A low-cost `codex_codex` smoke run was completed on `cost_variable_declared_not_applied`, the case where a transaction-cost variable is declared but never applied to strategy returns. This pilot is useful for debugging and qualitative evidence, but the planned final experiment is the selected-case ablation in `docs/corax_ablation_experiment_plan.md`.
+A low-cost selected-case run was completed with `gpt-5.4-mini` across nine cases from `docs/corax_ablation_experiment_plan.md`. The Claude Sentinel arm used `claude-haiku-4-5-20251001`. The run compares the plain reviewer, blind brief without a second agent, same-family dual-Codex path, and Codex-Claude Sentinel path.
 
-| Condition | Second agent | Predicted Issues | Precision | Recall | F1 | Gate |
-|---|---|---|---:|---:|---:|---|
-| `codex_codex` | Codex meta-reviewer | `missing_costs` | 1.0000 | 1.0000 | 1.0000 | `FAIL` |
+| Condition | Second agent | Blind brief? | Precision | Recall | F1 | Gate summary |
+|---|---|---:|---:|---:|---:|---|
+| `single_llm` | none | no | 0.4615 | 0.8571 | 0.6000 | 7 `FAIL`, 2 `PASS` |
+| `blind_only` | none | yes | 0.8571 | 0.8571 | 0.8571 | 7 `FAIL`, 2 `PASS` |
+| `codex_codex` | Codex meta-reviewer | yes | 0.8571 | 0.8571 | 0.8571 | 6 `FAIL`, 2 `NEEDS_REVIEW`, 1 `PASS` |
+| `codex_claude` | Claude Sentinel | yes | 0.8571 | 0.8571 | 0.8571 | 2 `FAIL`, 7 `NEEDS_REVIEW` |
 
-The first Codex reviewer caught the missing cost application. The second Codex reviewer did not overturn the verdict, but it added useful meta-review evidence: `groupthink_risk` was `MEDIUM`, with concerns about overconfidence and omitted execution-realism discussion.
+The main metric gain comes from the blind brief: removing the producer claim cuts producer-framing false positives and raises F1 from 0.6000 to 0.8571. The second-agent arms do not improve average F1 over `blind_only`, but they change gate behavior by surfacing review-risk cases instead of forcing every case into a clean pass/fail.
 
-Because the local Claude account is currently over limit, the `codex_claude` experiment should be run later. The `codex_codex` condition is runnable now with the weak Codex model and gives the project a real dual-agent path without spending Claude quota.
+The clearest semantic success case remains `cost_variable_declared_not_applied`: the submitted code declares `transaction_cost_bps = 10` but never subtracts costs from `strategy_return`. The live reviewer follows that data flow instead of being fooled by the word `cost`.
 
-## Other Adapters
+Rerunning live conditions requires local Codex/Claude CLI access. The curated result summary is in `reports/corax_ablation_selected_20260527.md`.
 
-The CLI still exposes supporting adapters:
+## Available Adapters
 
 - `single_llm_baseline`: deterministic naive rule baseline.
-- `darf`: offline DARF scanner-backed adapter.
 - `corax`: offline CORAX scanner-backed adapter with blind-brief stripping.
 - `corax-live`: single-pass live Codex reviewer.
-- `darf-live`: live DARF challenger path.
 - `corax-ablation`: the current main live CORAX experiment path.
 - `--sentinel-summary`: optional Claude Sentinel meta-review over a final evaluation summary.
 
@@ -132,16 +132,7 @@ The CLI still exposes supporting adapters:
 python -m unittest discover -s tests
 python -m compileall src integrations
 python -m ruff check . --exclude data/Intro_Transaction_Costs.ipynb --exclude data/Vectorized_Backtest_Tutorial.ipynb
-python -m pyright -p integrations/darf_mcp
 python -m pyright -p integrations/corax_mcp
-```
-
-The DARF MCP test suite has extra dependencies:
-
-```bash
-python -m pip install -r requirements.txt
-cd integrations/darf_mcp
-python -m pytest tests
 ```
 
 ## Configuration
@@ -156,7 +147,6 @@ Common variables:
 - `QUANT_AUDIT_CODEX_RESOURCE_DIR`: directory containing the Codex executable.
 - `QUANT_AUDIT_LIVE_MODEL`: default Codex reviewer model.
 - `QUANT_AUDIT_SENTINEL_MODEL`: default Claude Sentinel model.
-- `DARF_DATA_DIR`: supporting DARF runtime directory.
 
 See `CONFIGURATION.md` for complete setup notes.
 

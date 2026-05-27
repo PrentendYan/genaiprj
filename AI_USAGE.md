@@ -4,7 +4,7 @@ We used AI coding assistants throughout the project to help design the project s
 
 AI tools helped with:
 
-- Translating local CORAX and DARF design notes into a clean course-project artifact.
+- Translating local CORAX design notes into a clean course-project artifact.
 - Implementing and testing the offline benchmark harness, live reviewer adapters, and CORAX ablation adapter.
 - Drafting the weak-model ablation plan for `single_llm`, `codex_codex`, and `codex_claude`.
 - Drafting the README, the project status notes, the final report (`reports/primary_report.md`), and the audience-facing static page (`site/index.html`).

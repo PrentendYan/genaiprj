@@ -19,7 +19,7 @@ REFERENCES_DIR = Path(
 LESSONS_DB_PATH = Path(
     os.environ.get(
         "CORAX_LESSONS_DB_PATH",
-        PROJECT_ROOT / ".runtime" / "shared" / "darf-lessons.db",
+        PROJECT_ROOT / ".runtime" / "corax" / "corax-lessons.db",
     )
 )
 COST_DB_PATH = Path(os.environ.get("CORAX_COST_DB_PATH", DATA_DIR / "corax-cost.db"))

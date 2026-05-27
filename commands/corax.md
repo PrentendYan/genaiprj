@@ -7,8 +7,6 @@ argument-hint: "[--auto] [phase] [task-description]"
 
 CORAX is a Codex-on-Codex Santa Method workflow with a Claude Sentinel meta-review. Task: $ARGUMENTS
 
-CORAX coexists with DARF. It does not replace DARF; the two frameworks share only the lessons DB when configured to do so.
-
 ## Pre-Step 0: Mode Selection
 
 If `--auto` is absent, ask the user to choose interactive mode or full auto mode. Interactive mode confirms each phase and asks about disagreements. Auto mode proceeds silently, classifies issues, and notifies only on exceptions.
@@ -59,7 +57,7 @@ Track an initial zero-cost event with `corax_cost_track`.
 Before every phase:
 
 1. Call `corax_suggest_review_level` with phase and task complexity. The result is `full`, `lite`, or `skip`.
-2. Call `corax_lessons_search` with phase keywords and `source_framework=None`. Inject the top lessons into the blind brief as known-risk reminders. This can reuse DARF lessons.
+2. Call `corax_lessons_search` with phase keywords and `source_framework="corax"`. Inject the top lessons into the blind brief as known-risk reminders.
 3. Read `STATE.md`. If the previous two phases both had medium or higher groupthink, warn the user and recommend human intervention.
 
 ## Step 1: Execute Phase via Codex Producer
@@ -170,7 +168,7 @@ Inputs:
 - `codex-verdict.json`
 - `blind-brief.md`
 - Prior Sentinel verdicts
-- Similar DARF lessons from `corax_lessons_search(source_framework="darf")`
+- Similar CORAX lessons from `corax_lessons_search(source_framework="corax")`
 
 Use the Sentinel protocol and require output matching `skills/corax/schemas/sentinel-verdict.schema.json`.
 

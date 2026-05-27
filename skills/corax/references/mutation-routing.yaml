@@ -94,7 +94,7 @@ round_escalation:
 #
 # 4. For Round 3 (all 8 axes), there's no persona variation — whatever persona_selection.round_3
 #    says is used. If Round 3 still produces groupthink HIGH, escalate with the message
-#    "systematic convergence detected, consider switching to DARF framework".
+#    "systematic convergence detected, request human review before continuing".
 #
 # 5. Adding a new failure category:
 #    a. Add entry under `routing:` with primary/secondary/rationale/persona_selection

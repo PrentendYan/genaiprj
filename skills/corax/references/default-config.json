@@ -80,7 +80,7 @@
       "medium": 0.6,
       "high": 0.8
     },
-    "darf_lessons_top_k": 5,
+    "lesson_references_top_k": 5,
     "agent_model": "claude-opus-4-6",
     "agent_subagent_type": "general-purpose"
   },
@@ -109,8 +109,8 @@
     ]
   },
   "shared_brain": {
-    "_comment": "Shared DB with DARF. File is named darf-lessons.db for historical reasons (DARF created it first), logically cross-framework. See skills/corax/references/architecture.md.",
-    "lessons_db_path": "${CORAX_LESSONS_DB_PATH:-.runtime/shared/darf-lessons.db}",
+    "_comment": "CORAX lessons DB. Override with CORAX_LESSONS_DB_PATH when using a different local runtime location.",
+    "lessons_db_path": "${CORAX_LESSONS_DB_PATH:-.runtime/corax/corax-lessons.db}",
     "lessons_flat_dir": "${CORAX_LESSONS_FLAT_DIR:-.runtime/corax/lessons-flat/}",
     "migration_script": "${CORAX_MIGRATION_SCRIPT:-scripts/add-corax-columns.sql}",
     "schema_required_columns": ["metadata", "source_framework"],
@@ -120,10 +120,7 @@
     "interactive_pre_approval_per_producer_call": true,
     "auto_mode_post_verification_mandatory": true,
     "disallowed_write_paths": [
-      "**/darf-workspace/**",
-      "**/mcp-servers/darf-mcp/**",
-      "**/skills/darf/**",
-      "${CORAX_LESSONS_DB_PATH:-.runtime/shared/darf-lessons.db}"
+      "${CORAX_LESSONS_DB_PATH:-.runtime/corax/corax-lessons.db}"
     ]
   }
 }

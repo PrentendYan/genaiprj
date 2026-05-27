@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""CORAX Lessons module — shared DB access with source_framework='corax'."""
+"""CORAX Lessons module with source_framework='corax'."""
 
 import json
 from typing import Any
@@ -26,7 +26,7 @@ def build_tools() -> list[dict[str, Any]]:
     return [
         {
             "name": "corax_lessons_add",
-            "description": "Add a lesson to the shared DB with source_framework='corax'. Maps CORAX category to DARF domain.",
+            "description": "Add a lesson to the CORAX DB with source_framework='corax'. Maps CORAX category to legacy domain values.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -69,14 +69,14 @@ def build_tools() -> list[dict[str, Any]]:
         },
         {
             "name": "corax_lessons_search",
-            "description": "Search lessons by keyword. Optional source_filter: 'corax'|'darf'|null (both).",
+            "description": "Search CORAX lessons by keyword.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
                     "query": {"type": "string", "description": "Search keyword."},
                     "domain": {
                         "type": "string",
-                        "description": "Optional DARF domain filter.",
+                        "description": "Optional legacy domain filter.",
                         "enum": [
                             "quant_method",
                             "darf_flow",
@@ -86,8 +86,8 @@ def build_tools() -> list[dict[str, Any]]:
                     },
                     "source_filter": {
                         "type": "string",
-                        "description": "Filter: 'corax', 'darf', or null.",
-                        "enum": ["corax", "darf"],
+                        "description": "Filter: 'corax' or null.",
+                        "enum": ["corax"],
                     },
                     "limit": {
                         "type": "integer",
@@ -120,8 +120,8 @@ def build_tools() -> list[dict[str, Any]]:
                     },
                     "source_filter": {
                         "type": "string",
-                        "description": "Filter: 'corax', 'darf', or null.",
-                        "enum": ["corax", "darf"],
+                        "description": "Filter: 'corax' or null.",
+                        "enum": ["corax"],
                     },
                 },
                 "required": [],

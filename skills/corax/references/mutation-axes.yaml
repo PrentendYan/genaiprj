@@ -154,7 +154,7 @@ axes:
       Every major methodology choice in your output must cite at least 2 specific references:
       - Academic papers (with author + year + venue)
       - Proven open-source implementations (with repo + version)
-      - CORAX or DARF lesson DB entries (with lesson ID)
+      - CORAX lesson DB entries (with lesson ID)
 
       Format each citation inline and list all references in a "## References" section at the end.
 

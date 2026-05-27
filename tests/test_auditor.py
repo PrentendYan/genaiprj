@@ -41,7 +41,7 @@ class AuditHarnessTests(unittest.TestCase):
 
     def test_detects_lookahead_case(self) -> None:
         cases = {case.case_id: case for case in load_cases(CASES, root=ROOT)}
-        findings = audit_case(cases["btc_future_return_feature"], "darf_cross_model")
+        findings = audit_case(cases["btc_future_return_feature"], "corax_santa_sentinel")
         self.assertIn("lookahead", {finding.issue for finding in findings})
 
     def test_honest_case_has_no_findings(self) -> None:

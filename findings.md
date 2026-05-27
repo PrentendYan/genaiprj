@@ -6,17 +6,16 @@
 ## Key Findings
 
 - The working directory started empty and was not a git repository.
-- Local DARF and CORAX assets live under personal configuration paths and should not be copied wholesale into the submission.
-- DARF has a mature MCP-backed challenger implementation and 103 passing tests in the local source tree.
-- CORAX documents a Codex Producer, Santa Method Codex Reviewer, and Claude Sentinel gate, but should be represented in this repo as a clean project artifact rather than as personal tooling.
+- Local CORAX assets started in personal configuration paths and should be represented in this repo as clean project artifacts rather than as personal tooling.
+- CORAX documents a Codex Producer, Santa Method Codex Reviewer, and Claude Sentinel gate.
 
 ## Architecture Notes
 
-- The repo will present DARF and CORAX as two adversarial review designs for auditing quant research workflows.
-- The runnable artifact is an offline benchmark harness over labeled financial-code audit cases.
-- The benchmark uses real financial workflow patterns and a small bundled BTC historical data sample with source notes; it never generates fallback synthetic data.
+- The repo presents CORAX as the main adversarial review design for auditing quant research workflows.
+- The runnable artifact is a benchmark harness over labeled financial-code audit cases, plus a live CORAX ablation path.
+- The benchmark uses real financial workflow patterns and a small bundled BTC historical data sample with source notes.
 
 ## Open Questions
 
-- Remote GitHub repository URL is not configured yet.
+- The Codex-Claude Sentinel arm has run on the selected-case set.
 - Team member names and ownership need to be filled in before final submission.

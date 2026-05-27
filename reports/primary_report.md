@@ -2,7 +2,7 @@
 
 ## Abstract
 
-This project asks whether an agentic AI review workflow can catch finance research errors that make backtests look better than they are. The current main artifact is CORAX, a Codex-native adversarial audit workflow with a blind-brief step and a configurable second agent. We package it into a reproducible benchmark over 45 labeled finance audit cases and add a live ablation path with three main arms: no second agent, Codex-Codex dual agent, and Codex-Claude dual agent. The Codex-Codex arm is runnable now while Claude is over quota.
+This project asks whether an agentic AI review workflow can catch finance research errors that make backtests look better than they are. The current main artifact is CORAX, a Codex-native adversarial audit workflow with a blind-brief step and a configurable second agent. We package it into a reproducible benchmark over 45 labeled finance audit cases and add a live ablation path with four arms: plain single reviewer, blind brief only, Codex-Codex dual agent, and Codex-Claude dual agent. All four arms have been run on a selected nine-case stress set.
 
 ## Problem
 
@@ -37,47 +37,50 @@ The benchmark contains 45 labeled cases. Each case has a submitted artifact, a s
 - two real tutorial notebook workflows,
 - hand-authored finance snippets that target specific audit failures.
 
-The loader validates fixture existence, empty data, duplicate case IDs, missing labels, and unknown issue types. If a file is missing, the benchmark raises a clear error rather than generating fake data.
+The loader validates fixture existence, empty data, duplicate case IDs, missing labels, and unknown issue types. If a file is missing, the benchmark raises a clear error rather than replacing the source.
 
 ## Main Experiment Design: CORAX Ablation
 
-The live ablation adapter is `corax-ablation`. It tests three main conditions against the same labeled cases:
+The live ablation adapter is `corax-ablation`. It tests four conditions against the same labeled cases:
 
 | Condition | Second agent | Blind brief? | Purpose |
 |---|---|---:|---|
 | `single_llm` | none | no | baseline live reviewer with producer framing visible |
+| `blind_only` | none | yes | isolates the effect of removing producer framing |
 | `codex_codex` | Codex meta-reviewer | yes | runnable dual-agent stress test |
-| `codex_claude` | Claude Sentinel | yes | cross-model dual-agent run after Claude quota resets |
+| `codex_claude` | Claude Sentinel | yes | cross-model dual-agent stress test |
 
 This ablation is a better match for the project design than the earlier offline-vs-live comparison. Offline adapters are still useful sanity checks, but they cannot test the core CORAX mechanism because they do not exercise the model reviewer, the framing removal, or the Sentinel handoff.
 
 The planned final experiment uses a weak, low-cost reviewer model for every condition. That makes the experiment a stress test for architecture: if the plain reviewer is shallow or easily influenced by producer framing, the dual-agent paths should have more room to show value. The comparison remains fair because the same reviewer model, case set, labels, and scoring code are used across conditions.
 
-## Current Codex-Codex Smoke Result
+## Current Selected-Case Result
 
-We ran a low-cost `codex_codex` smoke test on `cost_variable_declared_not_applied`. The submitted code declares `transaction_cost_bps = 10` but computes `strategy_return` without subtracting costs. This is exactly the kind of semantic bug a simple keyword scanner can miss, because the word "cost" appears in the artifact even though the cost never affects returns.
+We ran a low-cost selected-case ablation with `gpt-5.4-mini` on nine cases. The Claude Sentinel arm used `claude-haiku-4-5-20251001`. The selected set includes lookahead, normalization leakage, random time-series split, missing costs, unsupported claims, clean controls, and an intentionally ambiguous notebook turnover case.
 
-| Condition | Second agent | Predicted Issues | Precision | Recall | F1 | Gate |
-|---|---|---|---:|---:|---:|---|
-| `codex_codex` | Codex meta-reviewer | `missing_costs` | 1.0000 | 1.0000 | 1.0000 | `FAIL` |
+| Condition | Second agent | Blind brief? | Precision | Recall | F1 | FP | FN | Failure count |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `single_llm` | none | no | 0.4615 | 0.8571 | 0.6000 | 7 | 1 | 0 |
+| `blind_only` | none | yes | 0.8571 | 0.8571 | 0.8571 | 1 | 1 | 0 |
+| `codex_codex` | Codex meta-reviewer | yes | 0.8571 | 0.8571 | 0.8571 | 1 | 1 | 0 |
+| `codex_claude` | Claude Sentinel | yes | 0.8571 | 0.8571 | 0.8571 | 1 | 1 | 0 |
 
-The most important observation is not the one-case F1 score. The useful observation is architectural: this run made two weak-model Codex calls. The first reviewer caught the missing cost application; the second Codex meta-reviewer returned `groupthink_risk: MEDIUM` and added concerns about overconfidence and omitted execution-realism discussion, but did not veto the correct failure verdict.
+The main metric gain comes from the blind brief. Removing the producer claim cuts producer-framing false positives and raises F1 from 0.6000 to 0.8571. The second-agent paths do not improve average F1 beyond `blind_only`, so the result should be presented as evidence for framing control plus review discipline, not as a universal accuracy gain.
 
-The final selected-case Codex-Codex experiment can run immediately. The Codex-Claude arm should be run after the Claude quota resets. Until then, the pilot should be treated as implementation evidence and experiment-design evidence, not as the final result table.
+The gate outcomes support the second-agent part of the architecture. `single_llm` produced 7 `FAIL` and 2 `PASS` decisions. `blind_only` kept the same 7 `FAIL` and 2 `PASS` gate profile while improving the issue set. `codex_codex` produced 6 `FAIL`, 2 `NEEDS_REVIEW`, and 1 `PASS` decisions. `codex_claude` produced 2 `FAIL` and 7 `NEEDS_REVIEW` decisions. The Claude Sentinel arm did not improve average F1 over same-family dual Codex, but it gave the most conservative gate profile and richer missed-concern analysis.
 
-## Component Benchmark
+The curated result summary is in `reports/corax_ablation_selected_20260527.md`.
 
-Before adding the ablation path, we evaluated five adapters over the full 45-case set. This remains useful as a component benchmark.
+## Offline Sanity Check
+
+The repo still includes a no-credential offline sanity path over all 45 cases. This check proves that the benchmark, labels, fixtures, and scoring code run from a clone without model access. It does not test the live CORAX mechanism.
 
 | Adapter | Mode | Precision | Recall | F1 | TP | FP | FN | Failures |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
 | `single_llm_baseline` | offline | 1.0000 | 0.5556 | 0.7143 | 20 | 0 | 16 | 0 |
-| `darf` | offline | 0.9459 | 0.9722 | 0.9589 | 35 | 2 | 1 | 0 |
 | `corax` | offline | 0.9459 | 0.9722 | 0.9589 | 35 | 2 | 1 | 0 |
-| `corax-live` | live | 0.9722 | 0.9722 | 0.9722 | 35 | 1 | 1 | 0 |
-| `darf-live` | live | 0.8182 | 1.0000 | 0.9000 | 36 | 8 | 0 | 0 |
 
-The offline DARF and CORAX rows are operationally equivalent on this benchmark because they share deterministic scanner behavior. They show that scanner-backed tools can cover many failure modes, but they do not prove the adversarial design. The live adapters show that real model review can catch more semantic structure, while also introducing non-determinism and false positives.
+The offline `corax` adapter is scanner-backed. It is useful for reproducibility, but the selected-case live ablation is the evidence for the agent workflow.
 
 ## Case Analysis
 
@@ -87,7 +90,7 @@ The offline DARF and CORAX rows are operationally equivalent on this benchmark b
 
 ### Dual Codex Adds Review Discipline
 
-The `codex_codex` smoke run shows the role of the second agent. The first Codex reviewer catches the annotated issue. The second Codex reviewer does not simply repeat the verdict; it adds meta-review concerns about confidence and missing execution-realism discussion. This supports the value of a dual-agent audit even before Claude is available.
+The selected-case `codex_codex` and `codex_claude` runs show the role of the second agent. The second reviewer does not simply repeat the first verdict; it records groupthink-risk and missed-concern checks in separate artifacts, and it moves some cases into `NEEDS_REVIEW` instead of forcing a clean pass/fail.
 
 ### Ambiguous Notebook Turnover Case
 
@@ -95,11 +98,11 @@ The `codex_codex` smoke run shows the role of the second agent. The first Codex 
 
 ## What Works
 
-The repository is now runnable from a fresh clone for offline evaluation. It also has mock tests for the live ablation path, so the core logic can be verified without spending model budget. The live smoke confirms that the Codex reviewer can catch a semantic transaction-cost bug and that the blind brief changes reviewer behavior in the expected direction.
+The repository is runnable from a fresh clone for offline evaluation. It also has mock tests for the live ablation path, so the core logic can be verified without spending model budget. The selected-case live run confirms that the Codex reviewer can catch a semantic transaction-cost bug and that the blind brief changes reviewer behavior in the expected direction.
 
 ## What Still Needs Work
 
-The full selected-case ablation should be run after the local Claude quota resets or with a configured cheaper Sentinel model. The detailed run plan is in `docs/corax_ablation_experiment_plan.md`. The recommended set is:
+The selected-case live ablation has been run for all four conditions. The detailed run plan is in `docs/corax_ablation_experiment_plan.md`. The selected set is:
 
 - `btc_future_return_feature`,
 - `global_standard_scaler_fit_transform`,
@@ -111,9 +114,9 @@ The full selected-case ablation should be run after the local Claude quota reset
 - `quotemedia_future_winner_signal`,
 - `quotemedia_train_window_scaler_clean`.
 
-The next evaluation should report per-condition precision, recall, F1, false positives, false negatives, gate decisions, Sentinel errors, and two or three case narratives. That would turn the smoke test into the final experiment table.
+The next report update should add one or two deeper case narratives from the final run artifacts, especially `cost_variable_declared_not_applied`, `notebook_transaction_turnover_alignment_ambiguous`, and `quotemedia_future_winner_signal`.
 
-The CORAX MCP layer also needs the same level of direct unit coverage as the DARF MCP layer. Current tests cover the benchmark, adapter logic, live wrapper behavior, Sentinel summary wrapper, and ablation handoff with mocks. Future tests should cover workspace initialization, mutation selection, mutation ladder behavior, lessons DB writes, and failure recovery.
+The CORAX MCP layer also needs more direct unit coverage. Current tests cover the benchmark, adapter logic, live wrapper behavior, Sentinel summary wrapper, and ablation handoff with mocks. Future tests should cover workspace initialization, mutation selection, mutation ladder behavior, lessons DB writes, and failure recovery.
 
 ## What AI Would Not Produce Alone
 

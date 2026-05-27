@@ -56,9 +56,9 @@
         }
       }
     },
-    "darf_lesson_references": {
+    "lesson_references": {
       "type": "array",
-      "description": "DARF lessons from lesson DB that informed this review",
+      "description": "CORAX lessons from the lessons DB that informed this review",
       "items": {
         "type": "object",
         "properties": {

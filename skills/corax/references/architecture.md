@@ -55,4 +55,4 @@ Reviewer calls use read-only ephemeral workspaces and should not write files.
 
 ## Shared Lessons DB
 
-CORAX can share a lessons DB with DARF. This is deliberate knowledge sharing, controlled by `source_framework` and metadata fields. CORAX must not import DARF modules directly.
+CORAX uses a project-local lessons DB by default. Lessons are controlled by `source_framework` and metadata fields so imported or legacy rows can be filtered rather than mixed into current runs accidentally.

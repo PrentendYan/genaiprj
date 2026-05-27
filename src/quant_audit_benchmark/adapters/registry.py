@@ -7,13 +7,11 @@ from .base import ReviewerAdapter
 from .corax import CoraxOfflineAdapter
 from .corax_ablation import CoraxAblationAdapter
 from .corax_live import CoraxLiveAdapter
-from .darf import DarfOfflineAdapter
-from .darf_live import DarfLiveAdapter
 from .deterministic import DeterministicAdapter
 
 
-DEFAULT_ADAPTER_NAMES = ("single_llm_baseline", "darf", "corax")
-ADAPTER_NAMES = (*DEFAULT_ADAPTER_NAMES, "corax-live", "darf-live", "corax-ablation")
+DEFAULT_ADAPTER_NAMES = ("single_llm_baseline", "corax")
+ADAPTER_NAMES = (*DEFAULT_ADAPTER_NAMES, "corax-live", "corax-ablation")
 
 
 def build_adapter(
@@ -27,14 +25,10 @@ def build_adapter(
 
     if name == "single_llm_baseline":
         return DeterministicAdapter(name, profile="single_llm_baseline")
-    if name == "darf":
-        return DarfOfflineAdapter()
     if name == "corax":
         return CoraxOfflineAdapter()
     if name == "corax-live":
         return CoraxLiveAdapter(model=model, run_dir=run_dir)
-    if name == "darf-live":
-        return DarfLiveAdapter(model=model, run_dir=run_dir)
     if name == "corax-ablation":
         return CoraxAblationAdapter(
             model=model,

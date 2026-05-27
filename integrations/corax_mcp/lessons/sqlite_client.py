@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """CORAX Lessons DB client.
 
-Connects to the configured shared DARF/CORAX lessons DB.
+Connects to the configured CORAX lessons DB.
 Enforces source_framework='corax' on all writes.
-Maps CORAX categories to DARF domains via CHECK constraint.
+Maps CORAX categories to legacy domain values required by the schema.
 """
 
 import json
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = LESSONS_DB_PATH
 
-# CORAX category -> DARF domain mapping (must satisfy CHECK constraint)
+# CORAX category -> legacy domain mapping (must satisfy CHECK constraint)
 _CATEGORY_TO_DOMAIN: dict[str, str] = {
     "lookahead": "quant_method",
     "temporal_split": "quant_method",
@@ -92,7 +92,7 @@ class LessonsClient:
         if not self._schema_ok:
             return {"error": "Schema not verified. Call verify_schema() first."}
 
-        # Map CORAX category to DARF domain
+        # Map CORAX category to legacy domain values.
         domain = _CATEGORY_TO_DOMAIN.get(corax_category)
         if domain is None:
             return {
@@ -144,7 +144,7 @@ class LessonsClient:
         top_k: int = 10,
         source_filter: str | None = None,
     ) -> list[dict[str, Any]]:
-        """Search lessons by keyword. Optional source_filter: 'corax'|'darf'|None (both)."""
+        """Search lessons by keyword. Optional source_filter: 'corax' or None."""
         like = f"%{query}%"
         conn = self._connect()
         try:
@@ -154,7 +154,7 @@ class LessonsClient:
             if domain:
                 conditions.append("domain = ?")
                 params.append(domain)
-            if source_filter and source_filter in ("corax", "darf"):
+            if source_filter == "corax":
                 conditions.append("source_framework = ?")
                 params.append(source_filter)
 
@@ -176,7 +176,7 @@ class LessonsClient:
         """Increment frequency and update last_triggered.
 
         Only bumps rows where source_framework='corax' OR source_framework IS NULL.
-        Refuses to modify DARF-owned rows to preserve isolation.
+        Refuses to modify non-CORAX rows to preserve isolation.
         """
         now = datetime.now(timezone.utc).isoformat(timespec="seconds")
         conn = self._connect()
@@ -219,7 +219,7 @@ class LessonsClient:
             conditions: list[str] = []
             params: list[Any] = []
 
-            if source_filter and source_filter in ("corax", "darf"):
+            if source_filter == "corax":
                 conditions.append("source_framework = ?")
                 params.append(source_filter)
 

@@ -28,10 +28,11 @@ from .corax_live import (
 
 ABLATION_CONDITIONS = (
     "single_llm",
+    "blind_only",
     "codex_codex",
     "codex_claude",
 )
-BLIND_CONDITIONS = frozenset({"codex_codex", "codex_claude"})
+BLIND_CONDITIONS = frozenset({"blind_only", "codex_codex", "codex_claude"})
 CODEX_META_CONDITIONS = frozenset({"codex_codex"})
 CLAUDE_SENTINEL_CONDITIONS = frozenset({"codex_claude"})
 SENTINEL_CONDITIONS = CODEX_META_CONDITIONS | CLAUDE_SENTINEL_CONDITIONS

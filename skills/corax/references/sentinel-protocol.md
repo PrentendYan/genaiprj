@@ -9,7 +9,7 @@ Claude Sentinel is the heterogeneous meta-reviewer in CORAX. It is called after 
 - Blind brief.
 - Codex reviewer verdict.
 - Prior Sentinel verdicts.
-- Relevant DARF/CORAX lessons.
+- Relevant CORAX lessons.
 
 ## Responsibilities
 
@@ -28,7 +28,7 @@ Claude Sentinel is the heterogeneous meta-reviewer in CORAX. It is called after 
   "verdict_override": "NONE|SOFT_VETO|HARD_VETO",
   "reasoning": "",
   "groupthink_signals": [],
-  "darf_lesson_references": [],
+  "lesson_references": [],
   "cross_phase_consistency_check": {
     "consistent_with_previous": true,
     "inconsistencies_found": []

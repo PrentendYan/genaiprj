@@ -263,6 +263,49 @@ class CoraxAblationTests(unittest.TestCase):
             )
             self.assertIn(claim, prompts[0])
 
+    def test_blind_only_strips_claim_without_second_agent(self) -> None:
+        prompts: list[str] = []
+
+        async def fake_reviewer(**kwargs: object) -> dict[str, object]:
+            prompts.append(str(kwargs["prompt"]))
+            return {
+                "verdict_json": {
+                    "verdict": "PASS",
+                    "issues": [],
+                    "confidence": 0.7,
+                    "counter_arguments": ["Mock result."],
+                },
+                "raw_output": "{}",
+                "error": None,
+            }
+
+        cases = {case.case_id: case for case in load_cases(CASES, root=ROOT)}
+        claim = "We conclude this producer claim should not be visible."
+
+        with TemporaryDirectory() as tmp_dir:
+            framing_path = Path(tmp_dir) / "framing.json"
+            framing_path.write_text(
+                json.dumps({"unsupported_claim": claim}),
+                encoding="utf-8",
+            )
+            adapter = CoraxAblationAdapter(
+                model="cheap-test-model",
+                run_dir=tmp_dir,
+                condition="blind_only",
+                reviewer=fake_reviewer,
+                framing_path=framing_path,
+            )
+            result = adapter.review(cases["unsupported_claim"])
+
+            features = result.raw_output["condition_features"]
+            self.assertTrue(features["blind_brief"])
+            self.assertFalse(features["second_agent"])
+            self.assertFalse(features["producer_claim_visible_to_reviewer"])
+            self.assertIsNone(result.raw_output["sentinel_result"])
+            self.assertEqual(result.raw_output["gate_decision"]["decision"], "PASS")
+            self.assertNotIn(claim, prompts[0])
+            self.assertIn("<REDACTED", prompts[0])
+
     def test_runner_passes_condition_and_writes_condition_result_file(self) -> None:
         async def fake_reviewer(**kwargs: object) -> dict[str, object]:
             return {

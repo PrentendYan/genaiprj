@@ -6,7 +6,6 @@ The repository has three layers:
 
 - Benchmark layer: `src/quant_audit_benchmark/` loads cases, runs adapters, computes metrics, and writes run artifacts.
 - CORAX agent layer: `integrations/corax_mcp/`, `skills/corax/`, and `commands/corax.md` contain blind-brief, reviewer, second-agent, gate, mutation, and lesson logic.
-- Supporting DARF layer: `integrations/darf_mcp/`, `skills/darf/`, and `commands/darf.md` remain available for comparison and shared infrastructure, but the current project framing is CORAX-first.
 
 ```mermaid
 flowchart TD
@@ -48,10 +47,10 @@ When a second agent is enabled, the adapter either calls a second Codex meta-rev
 | Condition | Second agent | Blind brief? | Current status |
 |---|---|---:|---|
 | `single_llm` | none | no | baseline |
-| `codex_codex` | Codex meta-reviewer | yes | runnable now |
-| `codex_claude` | Claude Sentinel | yes | run after Claude quota resets |
+| `codex_codex` | Codex meta-reviewer | yes | completed on the selected set |
+| `codex_claude` | Claude Sentinel | yes | completed on the selected set |
 
-This is the project mechanism under test. The previous offline adapter comparison remains a component benchmark and reproducibility check.
+This is the project mechanism under test. The offline adapter path remains only a reproducibility sanity check.
 
 ## Adapter Interface
 
@@ -74,13 +73,11 @@ The runner compares `findings` to `benchmark_cases/annotations.json`.
 ## Public Adapters
 
 - `single_llm_baseline`: deterministic naive rule baseline.
-- `darf`: offline DARF scanner-backed adapter.
 - `corax`: offline CORAX scanner-backed adapter with blind-brief stripping.
 - `corax-live`: single-pass live Codex reviewer.
-- `darf-live`: live DARF challenger path.
 - `corax-ablation`: main CORAX ablation path.
 
-The default CLI run uses only the offline adapters. Live adapters require local CLI credentials.
+The default CLI run uses only `single_llm_baseline` and `corax`. Live adapters require local CLI credentials.
 
 ## Runtime Artifacts
 

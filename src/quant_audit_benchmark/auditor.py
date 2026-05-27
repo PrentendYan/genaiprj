@@ -39,7 +39,6 @@ COST_TERMS = re.compile(r"cost|fee|slippage|commission|turnover", re.IGNORECASE)
 
 PROFILE_THRESHOLDS = {
     "single_llm_baseline": {"drop_minor": True, "require_two_patterns": True},
-    "darf_cross_model": {"drop_minor": False, "require_two_patterns": False},
     "corax_santa_sentinel": {"drop_minor": False, "require_two_patterns": False},
 }
 

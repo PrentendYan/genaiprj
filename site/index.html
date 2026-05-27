@@ -204,8 +204,8 @@
     <p class="standfirst reveal">A blind-brief ablation tests whether an AI reviewer can ignore producer framing and catch the line that invalidates a backtest.</p>
     <div class="byline reveal">
       <span>45 labeled cases</span>
-      <span>3 CORAX ablation arms</span>
-      <span>low-cost live smoke run</span>
+      <span>4 CORAX ablation arms</span>
+      <span>low-cost selected-case run</span>
     </div>
   </header>
 
@@ -221,28 +221,29 @@
     <div class="statrow">
       <div class="stat"><div class="big">5</div><div class="lbl">Failure modes audited</div></div>
       <div class="stat"><div class="big">11</div><div class="lbl">Clean control cases</div></div>
-      <div class="stat"><div class="big">0</div><div class="lbl">Synthetic fallback rows</div></div>
+      <div class="stat"><div class="big">0</div><div class="lbl">Synthetic data rows</div></div>
     </div>
     <p style="margin-top:18px;font-size:16px;color:var(--muted);">Lookahead bias &middot; missing transaction costs &middot; full-sample normalization leakage &middot; random splits on time series &middot; unsupported performance claims.</p>
   </section>
 
   <section>
-    <h2 data-n="3">Ablation Smoke</h2>
-    <p>One low-cost live run on the subtle transaction-cost case where a variable is declared but never applied to strategy returns.</p>
+    <h2 data-n="3">Selected-Case Ablation</h2>
+    <p>A low-cost live run on nine finance-audit cases using the same weak Codex model across conditions.</p>
     <div class="tablewrap">
       <table>
-        <caption>CORAX ablation on cost_variable_declared_not_applied</caption>
+        <caption>CORAX ablation on selected cases</caption>
         <thead>
           <tr><th>Condition</th><th>Second Agent</th><th>Prec.</th><th>Recall</th><th>F1</th><th>Gate</th></tr>
         </thead>
         <tbody>
-          <tr><td>single_llm</td><td>none</td><td>0.500</td><td>1.000</td><td>0.667</td><td>FAIL</td></tr>
-          <tr><td>codex_codex</td><td>Codex</td><td class="best">1.000</td><td>1.000</td><td class="best">1.000</td><td>FAIL</td></tr>
-          <tr><td>codex_claude</td><td>Claude</td><td>blocked</td><td>blocked</td><td>blocked</td><td>Claude quota</td></tr>
+          <tr><td>single_llm</td><td>none</td><td>0.462</td><td>0.857</td><td>0.600</td><td>7 FAIL, 2 PASS</td></tr>
+          <tr><td>blind_only</td><td>none</td><td class="best">0.857</td><td>0.857</td><td class="best">0.857</td><td>7 FAIL, 2 PASS</td></tr>
+          <tr><td>codex_codex</td><td>Codex</td><td class="best">0.857</td><td>0.857</td><td class="best">0.857</td><td>6 FAIL, 2 REVIEW, 1 PASS</td></tr>
+          <tr><td>codex_claude</td><td>Claude</td><td class="best">0.857</td><td>0.857</td><td class="best">0.857</td><td>2 FAIL, 7 REVIEW</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The same-family dual-agent path now runs without Claude. The second Codex agent accepted the missing-costs failure verdict and added a medium groupthink-risk note about overconfidence and missing execution-realism discussion.</p>
+    <p>The blind brief produced the main F1 gain by reducing producer-framing false positives. The second-agent paths kept the same F1 while adding more conservative gate decisions and richer missed-concern artifacts.</p>
   </section>
 
   <section>

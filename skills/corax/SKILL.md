@@ -9,7 +9,7 @@ user-invocable: true
 
 CORAX means Codex-Oriented Research with Adversarial eXecution. It is a quant research framework where Codex is the main producer, a separate Codex instance reviews a blind brief, and Claude Sentinel performs heterogeneous meta-review. The full execution flow is documented in the `$corax` command.
 
-CORAX coexists with DARF. It does not replace DARF; the only intentional shared resource is the lessons DB.
+CORAX is scoped as a standalone Codex-native audit workflow. Runtime paths are controlled through CORAX environment variables.
 
 ## Required Inputs
 
@@ -148,11 +148,9 @@ Phase 3 also stores plan YAML files, isolated plan directories, merged output, a
 
 ## Shared Brain
 
-The shared lessons DB path is configured by `CORAX_LESSONS_DB_PATH`; the project default is `.runtime/shared/darf-lessons.db`.
+The lessons DB path is configured by `CORAX_LESSONS_DB_PATH`; the project default is `.runtime/corax/corax-lessons.db`.
 
-The `darf-` filename prefix is historical. Logically, this DB is shared across frameworks. The `source_framework` column identifies whether a lesson came from DARF or CORAX. CORAX stores framework-specific metadata in `metadata` while preserving the original DARF-compatible domain constraints.
-
-The shared DB is deliberate coupling, not accidental leakage. Risks such as lesson contamination and source-label drift are mitigated by validation rules and `source_framework` filters.
+The `source_framework` column is kept for schema compatibility. CORAX writes lessons with `source_framework='corax'` and stores framework-specific metadata in `metadata`.
 
 ## Self-Learning
 
@@ -188,12 +186,10 @@ The CORAX MCP server lives in `integrations/corax_mcp/` and runs in stdio mode w
 
 Claude Sentinel is intentionally not an MCP tool. The skill orchestration calls it directly at the gate stage as a separate meta-reviewer.
 
-## Relationship to DARF
+## Project Scope
 
-- Code, process, workspace, command, and cost DB are independent.
-- The only intentional shared resource is the lessons DB.
-- CORAX does not import DARF MCP modules.
-- Both frameworks can coexist in the same project.
+- Code, process, workspace, command, cost DB, and lessons DB are CORAX-scoped by default.
+- CORAX does not rely on other local audit frameworks to run the benchmark or live ablation.
 
 ## References
 

@@ -2,7 +2,7 @@
 """CORAX MCP Server — Codex-Native Adversarial Research Framework.
 
 Provides atomic MCP tools for the CORAX skill orchestration layer.
-Independent from DARF MCP code; shares only the configured lessons DB.
+Uses only configured CORAX runtime paths by default.
 """
 
 import asyncio

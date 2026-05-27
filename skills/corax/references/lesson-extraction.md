@@ -20,11 +20,11 @@ All three conditions must hold:
 
 ## Shared DB Contract
 
-CORAX writes lessons with `source_framework='corax'`. Framework-specific fields go into `metadata`. Search can filter by `source_framework` with `None`, `corax`, `darf`, or cross-framework behavior.
+CORAX writes lessons with `source_framework='corax'`. Framework-specific fields go into `metadata`. Search can filter by `source_framework` with `None` or `corax`.
 
 ## Domain Mapping
 
-If the shared DB preserves DARF domain constraints, map CORAX categories into allowed domains while preserving the original CORAX category in metadata.
+If an existing DB preserves legacy domain constraints, map CORAX categories into allowed domains while preserving the original CORAX category in metadata.
 
 Example:
 

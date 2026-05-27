@@ -26,7 +26,7 @@ def main() -> int:
     parser.add_argument(
         "--adapter",
         choices=sorted(ADAPTER_NAMES),
-        help="Run one reviewer adapter. Defaults to offline adapters only.",
+        help="Run one reviewer adapter. Defaults to offline CORAX sanity adapters.",
     )
     parser.add_argument(
         "--model",
