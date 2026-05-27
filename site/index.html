@@ -204,7 +204,7 @@
     <p class="standfirst reveal">A blind-brief ablation tests whether an AI reviewer can ignore producer framing and catch the line that invalidates a backtest.</p>
     <div class="byline reveal">
       <span>45 labeled cases</span>
-      <span>4 CORAX ablation conditions</span>
+      <span>3 CORAX ablation arms</span>
       <span>low-cost live smoke run</span>
     </div>
   </header>
@@ -212,7 +212,7 @@
   <section>
     <h2 data-n="1">The Question</h2>
     <p class="lead"><span class="drop">A</span>I tools can write a backtest in minutes, and that speed is exactly what makes research mistakes easier to miss. A shift in the wrong direction, a normalization step before the split, a random shuffle of a time series, a Sharpe ratio computed gross of costs: none of these errors announces itself, and each produces a backtest that looks profitable.</p>
-    <p>This project asks whether <strong>CORAX</strong>, a Codex reviewer with a blind brief and optional Claude Sentinel, can catch those mistakes while avoiding producer-framing bias.</p>
+    <p>This project asks whether <strong>CORAX</strong>, a Codex reviewer with a blind brief and a configurable second agent, can catch those mistakes while avoiding producer-framing bias.</p>
   </section>
 
   <section>
@@ -233,17 +233,16 @@
       <table>
         <caption>CORAX ablation on cost_variable_declared_not_applied</caption>
         <thead>
-          <tr><th>Condition</th><th>Blind</th><th>Sentinel</th><th>Prec.</th><th>Recall</th><th>F1</th><th>Gate</th></tr>
+          <tr><th>Condition</th><th>Second Agent</th><th>Prec.</th><th>Recall</th><th>F1</th><th>Gate</th></tr>
         </thead>
         <tbody>
-          <tr><td>single_llm</td><td>no</td><td>no</td><td>0.500</td><td>1.000</td><td>0.667</td><td>FAIL</td></tr>
-          <tr><td>blind_only</td><td>yes</td><td>no</td><td class="best">1.000</td><td>1.000</td><td class="best">1.000</td><td>FAIL</td></tr>
-          <tr><td>sentinel_unblinded</td><td>no</td><td>yes</td><td class="best">1.000</td><td>1.000</td><td class="best">1.000</td><td>FAIL</td></tr>
-          <tr><td>full_corax</td><td>yes</td><td>yes</td><td class="best">1.000</td><td>1.000</td><td class="best">1.000</td><td>NEEDS_REVIEW</td></tr>
+          <tr><td>single_llm</td><td>none</td><td>0.500</td><td>1.000</td><td>0.667</td><td>FAIL</td></tr>
+          <tr><td>codex_codex</td><td>Codex</td><td class="best">1.000</td><td>1.000</td><td class="best">1.000</td><td>FAIL</td></tr>
+          <tr><td>codex_claude</td><td>Claude</td><td>blocked</td><td>blocked</td><td>blocked</td><td>Claude quota</td></tr>
         </tbody>
       </table>
     </div>
-    <p>The unblinded single-LLM condition saw the producer's claim and added a false unsupported-claim finding. The blind-only condition stripped that claim and returned only the annotated missing-costs bug. Full CORAX caught the same bug, then failed closed because the local Claude account hit its usage limit during Sentinel review.</p>
+    <p>The same-family dual-agent path now runs without Claude. The second Codex agent accepted the missing-costs failure verdict and added a medium groupthink-risk note about overconfidence and missing execution-realism discussion.</p>
   </section>
 
   <section>
@@ -266,8 +265,8 @@
       <div class="finding">
         <div class="num">03</div>
         <div>
-          <h3>The Sentinel fails closed</h3>
-          <p>When Claude Sentinel is unavailable or over quota, the adapter records the error and returns <code>NEEDS_REVIEW</code>. The workflow keeps the missing meta-review visible.</p>
+          <h3>The second agent is explicit</h3>
+          <p>The repo now supports a same-family Codex meta-reviewer and a later Claude Sentinel path. Both produce artifacts and gate decisions.</p>
         </div>
       </div>
     </div>

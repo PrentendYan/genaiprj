@@ -45,14 +45,14 @@ The offline benchmark and offline adapters do not require Codex CLI or Claude CL
 
 ## Local Codex and Claude CLI
 
-Live CORAX ablations, live DARF comparison runs, and Claude Sentinel runs require local CLI access and valid credentials. The development machine was validated with the Codex Desktop bundled CLI:
+Live CORAX ablations, live DARF comparison runs, and second-agent runs require local CLI access and valid credentials. The development machine was validated with the Codex Desktop bundled CLI:
 
 ```bash
 export PATH="/Applications/Codex.app/Contents/Resources:$PATH"
 codex exec --ephemeral --sandbox read-only -m gpt-5.4-mini "Return exactly: CODEX_SMOKE_OK"
 claude auth status
 claude -p "Return exactly: CLAUDE_SMOKE_OK" --output-format text --no-session-persistence --tools "" --max-budget-usd 0.20
-python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-ablation --condition single_llm --condition blind_only --model gpt-5.4-mini --case-id cost_variable_declared_not_applied
+python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-ablation --condition single_llm --condition codex_codex --model gpt-5.4-mini --case-id cost_variable_declared_not_applied
 ```
 
 The npm-global `codex` entry at `/Users/<user>/.npm-global/bin/codex` was incomplete on the development machine because it lacked the native Codex binary. Prefer `/Applications/Codex.app/Contents/Resources/codex` when using Codex Desktop.
@@ -63,7 +63,7 @@ Each `corax-ablation` case is saved to `.runtime/runs/<run_id>/corax-ablation/<c
 
 Live adapter failures are written to the output and artifact `error` field. Covered failure modes include missing Codex CLI, subprocess timeout, spawn failure, invalid JSON, and schema mismatch. The live adapters do not silently fall back to offline results.
 
-`corax-ablation` Sentinel conditions and `--sentinel-summary` call `claude -p`. They save `sentinel-summary.json` with raw output, parsed JSON, latency, model, and error fields.
+`codex_codex` uses a second Codex call and writes `codex-meta-review.json`. `codex_claude` and `--sentinel-summary` call `claude -p`; they save `sentinel-summary.json` with raw output, parsed JSON, latency, model, and error fields.
 
 Claude CLI may not see local login state inside a sandbox. When checking whether Claude is available, use `claude auth status` in the local shell. The development machine was validated with `authMethod` set to `claude.ai`, but the local account later hit a usage limit. Run non-Sentinel ablations first, then run Sentinel conditions after the quota resets. Set the Sentinel model with `--sentinel-model` or `QUANT_AUDIT_SENTINEL_MODEL`; otherwise the Claude CLI default model is used.
 

@@ -5,7 +5,7 @@
 The repository has three layers:
 
 - Benchmark layer: `src/quant_audit_benchmark/` loads cases, runs adapters, computes metrics, and writes run artifacts.
-- CORAX agent layer: `integrations/corax_mcp/`, `skills/corax/`, and `commands/corax.md` contain blind-brief, reviewer, Sentinel, gate, mutation, and lesson logic.
+- CORAX agent layer: `integrations/corax_mcp/`, `skills/corax/`, and `commands/corax.md` contain blind-brief, reviewer, second-agent, gate, mutation, and lesson logic.
 - Supporting DARF layer: `integrations/darf_mcp/`, `skills/darf/`, and `commands/darf.md` remain available for comparison and shared infrastructure, but the current project framing is CORAX-first.
 
 ```mermaid
@@ -19,7 +19,7 @@ flowchart TD
     G["Producer framing"] --> H["Phase output"]
     H --> I["Blind brief stripper"]
     I --> J["Codex reviewer"]
-    J --> K["Claude Sentinel"]
+    J --> K["Second agent"]
     K --> L["Gate decision"]
 
     H --> C
@@ -35,22 +35,21 @@ It builds a producer-style phase output from a case and a producer claim. Depend
 
 The reviewer is the Codex Santa Method wrapper in `integrations/corax_mcp/reviewer/codex_santa.py`. It returns schema-shaped JSON with a verdict, issue list, confidence, and counter-arguments.
 
-When Sentinel is enabled, the adapter calls `integrations/corax_mcp/sentinel/claude_sentinel.py` with the reviewer verdict and review material excerpt. The Sentinel result affects the gate decision:
+When a second agent is enabled, the adapter either calls a second Codex meta-reviewer or calls `integrations/corax_mcp/sentinel/claude_sentinel.py` with the reviewer verdict and review material excerpt. The second-agent result affects the gate decision:
 
 - reviewer errors become `ERROR`,
 - reviewer findings become `FAIL`,
 - clean reviewer output becomes `PASS`,
-- Sentinel errors or high groupthink risk become `NEEDS_REVIEW`,
-- Sentinel hard veto becomes `FAIL`.
+- second-agent errors or high groupthink risk become `NEEDS_REVIEW`,
+- second-agent hard veto becomes `FAIL`.
 
 ## Ablation Conditions
 
-| Condition | Producer claim visible? | Blind brief? | Claude Sentinel? |
-|---|---:|---:|---:|
-| `single_llm` | yes | no | no |
-| `blind_only` | no | yes | no |
-| `sentinel_unblinded` | yes | no | yes |
-| `full_corax` | no | yes | yes |
+| Condition | Second agent | Blind brief? | Current status |
+|---|---|---:|---|
+| `single_llm` | none | no | baseline |
+| `codex_codex` | Codex meta-reviewer | yes | runnable now |
+| `codex_claude` | Claude Sentinel | yes | run after Claude quota resets |
 
 This is the project mechanism under test. The previous offline adapter comparison remains a component benchmark and reproducibility check.
 
@@ -91,6 +90,7 @@ The default CLI run uses only the offline adapters. Live adapters require local 
 .runtime/runs/<run-id>/corax-ablation/<condition>/<case-id>/phase-output.md
 .runtime/runs/<run-id>/corax-ablation/<condition>/<case-id>/blind-brief.md
 .runtime/runs/<run-id>/corax-ablation/<condition>/<case-id>/artifact.json
+.runtime/runs/<run-id>/corax-ablation/<condition>/<case-id>/codex-meta-review.json
 .runtime/runs/<run-id>/corax-ablation/<condition>/<case-id>/sentinel/sentinel-summary.json
 .runtime/runs/<run-id>/results-<condition>.json
 ```

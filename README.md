@@ -1,6 +1,6 @@
 # CORAX Quant Audit
 
-This repository contains a finance-focused AI audit project. The main artifact is a CORAX ablation workflow that tests whether blind briefs and a second-model Sentinel improve an LLM reviewer for quantitative research artifacts.
+This repository contains a finance-focused AI audit project. The main artifact is a CORAX ablation workflow that tests whether a second agent improves an LLM reviewer for quantitative research artifacts.
 
 The project is built around a concrete finance problem: code and writeups for backtests can look convincing while hiding lookahead bias, full-sample normalization leakage, invalid time-series splits, missing transaction costs, or unsupported performance claims.
 
@@ -10,7 +10,7 @@ The project is built around a concrete finance problem: code and writeups for ba
 - Uses real market fixtures and real notebook workflow artifacts; it does not generate synthetic fallback data.
 - Provides a runnable offline benchmark that works immediately after cloning.
 - Provides live Codex/Claude paths for CORAX reviewer experiments.
-- Adds a CORAX ablation adapter with four conditions: `single_llm`, `blind_only`, `sentinel_unblinded`, and `full_corax`.
+- Adds a CORAX ablation adapter with three main experiment arms: `single_llm`, `codex_codex`, and `codex_claude`.
 - Keeps DARF code in the repository as supporting infrastructure and historical comparison, while the current project framing is CORAX-first.
 
 ## Repository Layout
@@ -37,17 +37,16 @@ CORAX is a Codex-native adversarial review pattern:
 1. A producer artifact is assembled from a benchmark case and a producer claim.
 2. A blind-brief step strips conclusion language and subjective framing.
 3. A Codex reviewer audits the material for finance-specific failure modes.
-4. A Claude Sentinel can review the exchange for groupthink and missed concerns.
+4. A second agent can review the exchange for groupthink and missed concerns.
 5. The benchmark records findings, raw model output, artifacts, latency, errors, and gate decisions.
 
-The ablation isolates which parts matter:
+The main ablation isolates the value of the second agent:
 
-| Condition | Producer claim visible? | Blind brief? | Claude Sentinel? |
-|---|---:|---:|---:|
-| `single_llm` | yes | no | no |
-| `blind_only` | no | yes | no |
-| `sentinel_unblinded` | yes | no | yes |
-| `full_corax` | no | yes | yes |
+| Condition | Second agent | Blind brief? | Current status |
+|---|---|---:|---|
+| `single_llm` | none | no | baseline |
+| `codex_codex` | Codex meta-reviewer | yes | runnable now |
+| `codex_claude` | Claude Sentinel | yes | run after Claude quota resets |
 
 ## Quick Start
 
@@ -83,9 +82,7 @@ python -m src.quant_audit_benchmark.cli \
   --model gpt-5.4-mini \
   --case-id cost_variable_declared_not_applied \
   --condition single_llm \
-  --condition blind_only \
-  --condition sentinel_unblinded \
-  --condition full_corax \
+  --condition codex_codex \
   --run-dir .runtime/runs/corax-ablation-smoke
 ```
 
@@ -103,22 +100,19 @@ Aggregate metrics are written as:
 .runtime/runs/<run-id>/results-<condition>.json
 ```
 
-If Claude CLI is unavailable, logged out, or over quota, `full_corax` records a Sentinel error and returns a `NEEDS_REVIEW` gate decision. It does not silently fall back to a fake Sentinel.
+If Claude CLI is unavailable, logged out, or over quota, `codex_claude` records a Sentinel error and returns a `NEEDS_REVIEW` gate decision. It does not silently fall back to a fake Sentinel.
 
-## Pilot Live Smoke Result
+## Current Codex-Codex Smoke Result
 
-A low-cost pilot smoke run was completed on `cost_variable_declared_not_applied`, the case where a transaction-cost variable is declared but never applied to strategy returns. This pilot is useful for debugging and qualitative evidence, but the planned final experiment is the selected-case ablation in `docs/corax_ablation_experiment_plan.md`.
+A low-cost `codex_codex` smoke run was completed on `cost_variable_declared_not_applied`, the case where a transaction-cost variable is declared but never applied to strategy returns. This pilot is useful for debugging and qualitative evidence, but the planned final experiment is the selected-case ablation in `docs/corax_ablation_experiment_plan.md`.
 
-| Condition | Predicted Issues | Precision | Recall | F1 | Gate |
-|---|---|---:|---:|---:|---|
-| `single_llm` | `missing_costs`, `unsupported_claim` | 0.5000 | 1.0000 | 0.6667 | `FAIL` |
-| `blind_only` | `missing_costs` | 1.0000 | 1.0000 | 1.0000 | `FAIL` |
-| `sentinel_unblinded` | `missing_costs` | 1.0000 | 1.0000 | 1.0000 | `FAIL` |
-| `full_corax` | `missing_costs` | 1.0000 | 1.0000 | 1.0000 | `NEEDS_REVIEW` due to local Claude quota |
+| Condition | Second agent | Predicted Issues | Precision | Recall | F1 | Gate |
+|---|---|---|---:|---:|---:|---|
+| `codex_codex` | Codex meta-reviewer | `missing_costs` | 1.0000 | 1.0000 | 1.0000 | `FAIL` |
 
-The smoke result shows the core CORAX hypothesis in miniature: the unblinded single-LLM condition saw the producer's claim and added a false `unsupported_claim`, while the blind-brief condition removed that framing and returned only the annotated `missing_costs` issue.
+The first Codex reviewer caught the missing cost application. The second Codex reviewer did not overturn the verdict, but it added useful meta-review evidence: `groupthink_risk` was `MEDIUM`, with concerns about overconfidence and omitted execution-realism discussion.
 
-Because the local Claude account is currently over limit, the full selected-case Sentinel experiment should be run later. The non-Sentinel conditions can be run first with a weak reviewer model, then the Sentinel conditions can be run after the quota resets.
+Because the local Claude account is currently over limit, the `codex_claude` experiment should be run later. The `codex_codex` condition is runnable now with the weak Codex model and gives the project a real dual-agent path without spending Claude quota.
 
 ## Other Adapters
 

@@ -19,11 +19,32 @@ CASES = ROOT / "benchmark_cases" / "cases.json"
 
 
 class CoraxAblationTests(unittest.TestCase):
-    def test_blind_condition_strips_producer_claim_before_review(self) -> None:
+    def test_codex_codex_strips_producer_claim_before_review(self) -> None:
         prompts: list[str] = []
 
         async def fake_reviewer(**kwargs: object) -> dict[str, object]:
-            prompts.append(str(kwargs["prompt"]))
+            prompt = str(kwargs["prompt"])
+            prompts.append(prompt)
+            if "second CORAX agent" in prompt:
+                return {
+                    "verdict_json": {
+                        "groupthink_risk": "LOW",
+                        "missed_concerns": [
+                            {
+                                "severity": "minor",
+                                "category": "residual_risk",
+                                "issue": "Manual review remains useful.",
+                            }
+                        ],
+                        "verdict_override": "NONE",
+                        "reasoning": (
+                            "The first review catches the missing-cost bug; the meta-review "
+                            "only records residual manual-review risk."
+                        ),
+                    },
+                    "raw_output": "{}",
+                    "error": None,
+                }
             return {
                 "verdict_json": {
                     "verdict": "FAIL",
@@ -56,20 +77,20 @@ class CoraxAblationTests(unittest.TestCase):
             adapter = CoraxAblationAdapter(
                 model="cheap-test-model",
                 run_dir=tmp_dir,
-                condition="blind_only",
+                condition="codex_codex",
                 reviewer=fake_reviewer,
                 framing_path=framing_path,
             )
             result = adapter.review(cases["cost_variable_declared_not_applied"])
 
-            self.assertEqual(result.raw_output["condition"], "blind_only")
+            self.assertEqual(result.raw_output["condition"], "codex_codex")
             self.assertTrue(result.raw_output["condition_features"]["blind_brief"])
-            self.assertIsNone(result.raw_output["sentinel_result"])
+            self.assertEqual(result.raw_output["sentinel_result"]["mode"], "codex_meta_review")
             self.assertIn("missing_costs", {finding.issue for finding in result.findings})
             self.assertNotIn(claim, prompts[0])
             self.assertIn("<REDACTED", prompts[0])
 
-    def test_full_corax_runs_sentinel_and_records_gate_decision(self) -> None:
+    def test_codex_claude_runs_sentinel_and_records_gate_decision(self) -> None:
         sentinel_calls: list[dict[str, object]] = []
 
         async def fake_reviewer(**kwargs: object) -> dict[str, object]:
@@ -113,7 +134,7 @@ class CoraxAblationTests(unittest.TestCase):
                 model="cheap-test-model",
                 sentinel_model="cheap-sentinel-model",
                 run_dir=tmp_dir,
-                condition="full_corax",
+                condition="codex_claude",
                 reviewer=fake_reviewer,
                 sentinel=fake_sentinel,
             )
@@ -127,6 +148,76 @@ class CoraxAblationTests(unittest.TestCase):
                 "cheap-sentinel-model",
             )
             self.assertTrue(artifact.exists())
+
+    def test_codex_codex_runs_second_codex_meta_review(self) -> None:
+        prompts: list[str] = []
+
+        async def fake_reviewer(**kwargs: object) -> dict[str, object]:
+            prompt = str(kwargs["prompt"])
+            prompts.append(prompt)
+            if "second CORAX agent" in prompt:
+                return {
+                    "verdict_json": {
+                        "groupthink_risk": "LOW",
+                        "missed_concerns": [
+                            {
+                                "severity": "minor",
+                                "category": "residual_risk",
+                                "issue": "The first reviewer should still mention omitted context risk.",
+                            }
+                        ],
+                        "verdict_override": "NONE",
+                        "reasoning": (
+                            "The first reviewer identified the core missing-cost bug, "
+                            "and the remaining concern is only residual context risk."
+                        ),
+                    },
+                    "raw_output": "{}",
+                    "error": None,
+                }
+            return {
+                "verdict_json": {
+                    "verdict": "FAIL",
+                    "issues": [
+                        {
+                            "issue": "missing_costs",
+                            "severity": "major",
+                            "evidence": "cost variable never reaches strategy_return",
+                        }
+                    ],
+                    "confidence": 0.9,
+                    "counter_arguments": ["The omitted code may apply costs later."],
+                },
+                "raw_output": "{}",
+                "error": None,
+            }
+
+        cases = {case.case_id: case for case in load_cases(CASES, root=ROOT)}
+        with TemporaryDirectory() as tmp_dir:
+            adapter = CoraxAblationAdapter(
+                model="cheap-test-model",
+                run_dir=tmp_dir,
+                condition="codex_codex",
+                reviewer=fake_reviewer,
+            )
+            result = adapter.review(cases["cost_variable_declared_not_applied"])
+            meta_artifact = (
+                Path(tmp_dir)
+                / "corax-ablation"
+                / "codex_codex"
+                / "cost_variable_declared_not_applied"
+                / "codex-meta-review.json"
+            )
+
+            self.assertEqual(len(prompts), 2)
+            self.assertTrue(result.raw_output["condition_features"]["second_agent"])
+            self.assertTrue(
+                result.raw_output["condition_features"]["codex_meta_reviewer"]
+            )
+            self.assertFalse(result.raw_output["condition_features"]["claude_sentinel"])
+            self.assertEqual(result.raw_output["sentinel_result"]["mode"], "codex_meta_review")
+            self.assertEqual(result.raw_output["gate_decision"]["decision"], "FAIL")
+            self.assertTrue(meta_artifact.exists())
 
     def test_unblinded_condition_keeps_producer_claim_visible(self) -> None:
         prompts: list[str] = []
@@ -196,7 +287,7 @@ class CoraxAblationTests(unittest.TestCase):
             adapter = CoraxAblationAdapter(
                 model="cheap-test-model",
                 run_dir=tmp_dir,
-                condition="blind_only",
+                condition="codex_codex",
                 reviewer=fake_reviewer,
             )
             with patch(
@@ -208,7 +299,7 @@ class CoraxAblationTests(unittest.TestCase):
                     "corax-ablation",
                     model="cheap-test-model",
                     run_dir=tmp_dir,
-                    condition="blind_only",
+                    condition="codex_codex",
                 )
 
             build_mock.assert_called_once_with(
@@ -216,10 +307,10 @@ class CoraxAblationTests(unittest.TestCase):
                 model="cheap-test-model",
                 sentinel_model=None,
                 run_dir=tmp_dir,
-                condition="blind_only",
+                condition="codex_codex",
             )
-            self.assertEqual(aggregate["condition"], "blind_only")
-            self.assertTrue((Path(tmp_dir) / "results-blind_only.json").exists())
+            self.assertEqual(aggregate["condition"], "codex_codex")
+            self.assertTrue((Path(tmp_dir) / "results-codex_codex.json").exists())
 
 
 if __name__ == "__main__":

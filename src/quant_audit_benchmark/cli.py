@@ -42,7 +42,7 @@ def main() -> int:
         choices=sorted(ABLATION_CONDITIONS),
         help=(
             "CORAX ablation condition. Only valid with --adapter corax-ablation. "
-            "Can be repeated; defaults to full_corax for that adapter."
+            "Can be repeated; defaults to codex_codex for that adapter."
         ),
     )
     parser.add_argument(
@@ -85,7 +85,7 @@ def main() -> int:
     if args.profile:
         results = [evaluate(cases, args.profile)]
     elif args.adapter == "corax-ablation":
-        conditions = args.condition or ["full_corax"]
+        conditions = args.condition or ["codex_codex"]
         results = [
             evaluate_adapter(
                 cases,
