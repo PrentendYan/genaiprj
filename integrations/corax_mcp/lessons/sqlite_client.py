@@ -3,7 +3,7 @@
 
 Connects to the configured CORAX lessons DB.
 Enforces source_framework='corax' on all writes.
-Maps CORAX categories to legacy domain values required by the schema.
+Maps CORAX categories to lesson domains.
 """
 
 import json
@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 DB_PATH = LESSONS_DB_PATH
 
-# CORAX category -> legacy domain mapping (must satisfy CHECK constraint)
+# CORAX category -> lesson domain mapping
 _CATEGORY_TO_DOMAIN: dict[str, str] = {
     "lookahead": "quant_method",
     "temporal_split": "quant_method",
@@ -32,7 +32,7 @@ _CATEGORY_TO_DOMAIN: dict[str, str] = {
     "methodology": "quant_method",
     "codex_blindspot": "challenger",
     "groupthink_signal": "challenger",
-    "mutation_trigger": "darf_flow",
+    "mutation_trigger": "corax_flow",
     "gate_failure": "gate_rubric",
     "rubric_gap": "gate_rubric",
 }
@@ -92,7 +92,7 @@ class LessonsClient:
         if not self._schema_ok:
             return {"error": "Schema not verified. Call verify_schema() first."}
 
-        # Map CORAX category to legacy domain values.
+        # Map CORAX category to lesson domain values.
         domain = _CATEGORY_TO_DOMAIN.get(corax_category)
         if domain is None:
             return {

@@ -21,14 +21,13 @@ The repository is configured around the CORAX project path. Personal machine pat
 - `CORAX_LESSONS_DB_PATH`: CORAX lessons DB path.
 - `CORAX_LESSONS_FLAT_DIR`: CORAX flat lessons output directory.
 
-## Offline Run
+## No-Model Validation
 
 ```bash
 python -m unittest discover -s tests
-python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
 ```
 
-The offline benchmark and offline adapters do not require Codex CLI or Claude CLI.
+The unit and mock-agent tests do not require Codex CLI or Claude CLI.
 
 ## Local Codex and Claude CLI
 
@@ -39,7 +38,7 @@ export PATH="/Applications/Codex.app/Contents/Resources:$PATH"
 codex exec --ephemeral --sandbox read-only -m gpt-5.4-mini "Return exactly: CODEX_SMOKE_OK"
 claude auth status
 claude -p "Return exactly: CLAUDE_SMOKE_OK" --output-format text --no-session-persistence --tools "" --max-budget-usd 0.20
-python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-ablation --condition single_llm --condition codex_codex --model gpt-5.4-mini --case-id cost_variable_declared_not_applied
+python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax-ablation --condition single_llm --condition blind_only --condition codex_codex --model gpt-5.4-mini --case-id cost_variable_declared_not_applied
 ```
 
 Prefer `/Applications/Codex.app/Contents/Resources/codex` when using Codex Desktop.
@@ -48,7 +47,7 @@ Live adapter models are configurable by design. Use a weak or low-cost reviewer 
 
 Each `corax-ablation` case is saved to `.runtime/runs/<run_id>/corax-ablation/<condition>/<case_id>/artifact.json`. Aggregate condition output is saved to `.runtime/runs/<run_id>/results-<condition>.json`.
 
-Live adapter failures are written to the output and artifact `error` field. Covered failure modes include missing Codex CLI, subprocess timeout, spawn failure, invalid JSON, and schema mismatch. The live adapters do not silently fall back to offline results.
+Live adapter failures are written to the output and artifact `error` field. Covered failure modes include missing Codex CLI, subprocess timeout, spawn failure, invalid JSON, and schema mismatch.
 
 `codex_codex` uses a second Codex call and writes `codex-meta-review.json`. `codex_claude` and `--sentinel-summary` call `claude -p`; they save `sentinel-summary.json` with raw output, parsed JSON, latency, model, and error fields.
 

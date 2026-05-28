@@ -33,7 +33,7 @@ Do not hard-code model names in source code or docs beyond examples. The model m
 
 ## Case Set
 
-Run the full ablation on a selected 9-case set before spending budget on all 45 cases:
+Run the full ablation on the 9-case set:
 
 | Case | Expected issue | Why included |
 |---|---|---|

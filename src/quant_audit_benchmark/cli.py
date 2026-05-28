@@ -9,9 +9,9 @@ from pathlib import Path
 
 from integrations.corax_mcp.sentinel import run_sentinel_summary
 
-from .adapters import ADAPTER_NAMES, DEFAULT_ADAPTER_NAMES
+from .adapters import ADAPTER_NAMES
 from .adapters.corax_ablation import ABLATION_CONDITIONS
-from .auditor import PROFILE_THRESHOLDS, evaluate, load_cases
+from .auditor import load_cases
 from .runner import evaluate_adapter
 
 
@@ -19,14 +19,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run the quant audit benchmark.")
     parser.add_argument("--cases", required=True, help="Path to benchmark cases JSON.")
     parser.add_argument(
-        "--profile",
-        choices=sorted(PROFILE_THRESHOLDS),
-        help="Run one legacy deterministic profile.",
-    )
-    parser.add_argument(
         "--adapter",
         choices=sorted(ADAPTER_NAMES),
-        help="Run one reviewer adapter. Defaults to offline CORAX sanity adapters.",
+        help="Run one reviewer adapter. Defaults to the CORAX ablation adapter.",
     )
     parser.add_argument(
         "--model",
@@ -77,19 +72,15 @@ def main() -> int:
         cases = cases[: args.limit]
     if not cases:
         parser.error("No benchmark cases selected.")
-    if args.profile and args.adapter:
-        parser.error("--profile and --adapter cannot be used together.")
-    if args.condition and args.adapter != "corax-ablation":
+    if args.condition and args.adapter not in (None, "corax-ablation"):
         parser.error("--condition is only supported with --adapter corax-ablation.")
 
-    if args.profile:
-        results = [evaluate(cases, args.profile)]
-    elif args.adapter == "corax-ablation":
+    if args.adapter == "corax-ablation" or args.adapter is None:
         conditions = args.condition or ["codex_codex"]
         results = [
             evaluate_adapter(
                 cases,
-                args.adapter,
+                "corax-ablation",
                 model=args.model,
                 sentinel_model=args.sentinel_model,
                 run_dir=args.run_dir,
@@ -98,16 +89,14 @@ def main() -> int:
             for condition in conditions
         ]
     else:
-        adapters = [args.adapter] if args.adapter else list(DEFAULT_ADAPTER_NAMES)
         results = [
             evaluate_adapter(
                 cases,
-                adapter,
+                args.adapter,
                 model=args.model,
                 sentinel_model=args.sentinel_model,
                 run_dir=args.run_dir,
             )
-            for adapter in adapters
         ]
 
     output: object = results

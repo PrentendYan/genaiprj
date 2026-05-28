@@ -55,7 +55,7 @@ The clearest success case remains `cost_variable_declared_not_applied`. The live
 
 ## Remaining Caveats
 
-- This is a selected nine-case stress test, not a full 45-case live benchmark.
+- This is a nine-case stress test focused on the CORAX ablation.
 - The run uses a weak, low-cost reviewer model by design.
 - Live model outputs are non-deterministic, so reruns may differ.
 - The ambiguous notebook turnover case remains a label-boundary issue and should be discussed honestly.

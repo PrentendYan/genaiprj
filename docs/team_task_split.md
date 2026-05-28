@@ -4,9 +4,9 @@ The project is now organized around one main story: CORAX ablation for finance r
 
 ## Shared State
 
-- The repo has a 45-case finance audit benchmark.
-- The offline benchmark runs without model credentials.
-- `corax-ablation` supports the main arms `single_llm`, `codex_codex`, and `codex_claude`.
+- The repo has a focused 9-case finance audit benchmark.
+- Unit and mock-agent tests run without model credentials.
+- `corax-ablation` supports the main arms `single_llm`, `blind_only`, `codex_codex`, and `codex_claude`.
 - Normal tests use mocks and do not spend model budget.
 - Claude Sentinel has now run on the selected-case set.
 - The weak-model experiment plan is in `docs/corax_ablation_experiment_plan.md`.
@@ -45,8 +45,8 @@ Goal: run the weak-model ablation honestly and turn outputs into evidence.
 
 Main tasks:
 
-- Use the selected 9-case set from `docs/corax_ablation_experiment_plan.md`.
-- Use the completed `single_llm` and `codex_codex` results for the main comparison.
+- Use the 9-case set from `docs/corax_ablation_experiment_plan.md`.
+- Use the completed `single_llm`, `blind_only`, and `codex_codex` results for the main comparison.
 - Use the completed `codex_claude` run for the main result table; rerun only if the team wants stronger-model confirmation.
 - Record precision, recall, F1, false positives, false negatives, failure count, latency, and gate decisions.
 - Inspect case-level deltas, especially `cost_variable_declared_not_applied`.

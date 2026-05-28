@@ -40,7 +40,7 @@ class SentinelSummaryTests(unittest.TestCase):
 
         with TemporaryDirectory() as tmp_dir:
             result = run_sentinel_summary(
-                [{"adapter": "corax", "f1": 1.0}],
+                [{"adapter": "corax-ablation", "f1": 1.0}],
                 run_dir=tmp_dir,
                 model="claude-test-model",
                 runner=fake_runner,
@@ -63,7 +63,7 @@ class SentinelSummaryTests(unittest.TestCase):
 
         with TemporaryDirectory() as tmp_dir:
             result = run_sentinel_summary(
-                [{"adapter": "corax", "f1": 1.0}],
+                [{"adapter": "corax-ablation", "f1": 1.0}],
                 run_dir=tmp_dir,
                 runner=bad_runner,
             )

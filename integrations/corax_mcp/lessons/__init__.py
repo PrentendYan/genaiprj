@@ -26,7 +26,7 @@ def build_tools() -> list[dict[str, Any]]:
     return [
         {
             "name": "corax_lessons_add",
-            "description": "Add a lesson to the CORAX DB with source_framework='corax'. Maps CORAX category to legacy domain values.",
+            "description": "Add a lesson to the CORAX DB with source_framework='corax'. Maps CORAX category to lesson domains.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -76,10 +76,10 @@ def build_tools() -> list[dict[str, Any]]:
                     "query": {"type": "string", "description": "Search keyword."},
                     "domain": {
                         "type": "string",
-                        "description": "Optional legacy domain filter.",
+                        "description": "Optional lesson domain filter.",
                         "enum": [
                             "quant_method",
-                            "darf_flow",
+                            "corax_flow",
                             "gate_rubric",
                             "challenger",
                         ],

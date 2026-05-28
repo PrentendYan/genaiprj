@@ -6,9 +6,9 @@ The project is built around a concrete finance problem: code and writeups for ba
 
 ## What This Project Does
 
-- Builds a labeled benchmark of 45 finance audit cases.
+- Builds a labeled benchmark of 9 finance audit cases used in the live ablation.
 - Uses real market fixtures and real notebook workflow artifacts.
-- Provides a runnable offline benchmark that works immediately after cloning.
+- Provides unit and mock-agent tests that work immediately after cloning.
 - Provides live Codex/Claude paths for CORAX reviewer experiments.
 - Adds a CORAX ablation adapter with four experiment arms: `single_llm`, `blind_only`, `codex_codex`, and `codex_claude`.
 
@@ -49,28 +49,15 @@ The main ablation separates producer-framing removal from second-agent review:
 
 ## Quick Start
 
-The default benchmark path uses only Python 3.11+ and the standard library.
+The no-model validation path uses only Python 3.11+ and the standard library.
 
 ```bash
 python -m unittest discover -s tests
-python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
-python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax
 ```
-
-With no explicit `--adapter`, the CLI runs only the offline CORAX sanity path: `single_llm_baseline` and `corax`. It does not run live model calls.
-
-Expected offline metrics:
-
-| Adapter | Precision | Recall | F1 |
-|---|---:|---:|---:|
-| `single_llm_baseline` | 1.0000 | 0.5556 | 0.7143 |
-| `corax` | 0.9459 | 0.9722 | 0.9589 |
-
-The offline `corax` adapter is a deterministic scanner-backed sanity check. It is useful for reproducibility, but it is not the main CORAX ablation evidence.
 
 ## Run CORAX Ablations
 
-Live ablations require local Codex CLI access. On the development machine, the Codex Desktop bundled CLI was the working path:
+Live ablations require local Codex CLI access. The `codex_claude` condition also requires Claude CLI access. On the development machine, the Codex Desktop bundled CLI was the working path:
 
 ```bash
 export PATH="/Applications/Codex.app/Contents/Resources:$PATH"
@@ -120,8 +107,6 @@ Rerunning live conditions requires local Codex/Claude CLI access. The curated re
 
 ## Available Adapters
 
-- `single_llm_baseline`: deterministic naive rule baseline.
-- `corax`: offline CORAX scanner-backed adapter with blind-brief stripping.
 - `corax-live`: single-pass live Codex reviewer.
 - `corax-ablation`: the current main live CORAX experiment path.
 - `--sentinel-summary`: optional Claude Sentinel meta-review over a final evaluation summary.
@@ -130,8 +115,8 @@ Rerunning live conditions requires local Codex/Claude CLI access. The curated re
 
 ```bash
 python -m unittest discover -s tests
-python -m compileall src integrations
-python -m ruff check . --exclude data/Intro_Transaction_Costs.ipynb --exclude data/Vectorized_Backtest_Tutorial.ipynb
+python -m compileall src integrations/corax_mcp
+python -m ruff check . --exclude data/Intro_Transaction_Costs.ipynb
 python -m pyright -p integrations/corax_mcp
 ```
 

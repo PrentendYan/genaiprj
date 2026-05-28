@@ -2,16 +2,16 @@
 
 ## Current Benchmark Scope
 
-The benchmark cases use bundled real-market fixtures, two real notebook workflow
-artifacts, and a set of hand-authored finance workflow snippets. The
+The benchmark cases use bundled real-market fixtures, one real notebook workflow
+artifact, and a set of hand-authored finance workflow snippets. The
 hand-authored snippets are designed to exercise specific audit failures; the
 notebook-derived cases are extracted from real tutorial workflows placed under
 `data/`, and the QuoteMedia cases use sampled stock data copied from the local
 Nasdaq Zacks Fundamentals B dataset.
 
-This is intentional for the current offline benchmark stage: every run sees the
-same rows and the same submitted artifacts, so precision and recall changes come
-from the reviewer adapter rather than from live data drift or API availability.
+This is intentional for the current CORAX ablation stage: every condition sees
+the same rows and the same submitted artifacts, so precision and recall changes
+come from the review workflow rather than from live data drift.
 
 Future Route B expansion can add more real datasets, notebooks, scripts, or
 report excerpts as fixtures under `data/`, with source notes in this file and
@@ -34,35 +34,19 @@ The project intentionally does not create synthetic fallback data. If the fixtur
 Files:
 
 - `data/quotemedia_prices_sample.csv`
-- `data/quotemedia_tickers_sample.csv`
 
 The stock fixture is a small sample extracted from a local copy of the
 QuoteMedia / Nasdaq Zacks Fundamentals B dataset, as of January 2024. It was
-derived from the QUOTEMEDIA_PRICES and QUOTEMEDIA_TICKERS tables of that
-dataset.
+derived from the QUOTEMEDIA_PRICES table of that dataset.
 
 The project sample keeps daily QuoteMedia OHLCV / adjusted OHLCV rows for AAPL,
-MSFT, JPM, XOM, and SPY over calendar year 2022, plus the corresponding ticker
-metadata. The sample is intentionally small so the benchmark remains portable
-while still using real multi-stock market data.
+MSFT, JPM, XOM, and SPY over calendar year 2022. The sample is intentionally
+small so the benchmark remains portable while still using real multi-stock
+market data.
 
 Use of this sample within the project was confirmed by the team as permitted.
 The repository is private, and the sample is included only as a small
 benchmark fixture, not redistributed as a standalone dataset.
-
-## Vectorized Backtest Tutorial Notebook
-
-File: `data/Vectorized_Backtest_Tutorial.ipynb`
-
-This notebook is a real tutorial workflow from
-[twiecki/financial-analysis-python-tutorial](https://github.com/twiecki/financial-analysis-python-tutorial).
-It downloads S&P 500 index data with `yfinance`, builds a moving-average
-crossover strategy, uses lagged signals to avoid lookahead bias, adds volatility
-targeting, and generates a QuantStats report.
-
-Benchmark cases derived from this notebook test clean lagged-signal handling,
-clean volatility-targeted returns, and a pre-cost performance-report case where
-the reviewer should ask whether transaction costs are missing.
 
 ## Transaction Costs Tutorial Notebook
 

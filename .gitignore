@@ -26,15 +26,3 @@ build/
 *.key
 credentials*.json
 *.crt
-
-# Part 3 evaluation evidence: selectively track v2 summary artifacts
-!/.runtime/
-/.runtime/*
-!/.runtime/runs/
-/.runtime/runs/*
-!/.runtime/runs/part3-eval-v2/
-/.runtime/runs/part3-eval-v2/_make_summary.py
-!/.runtime/runs/part3-live-full-v2/
-/.runtime/runs/part3-live-full-v2/*
-!/.runtime/runs/part3-live-full-v2/*.json
-!/.runtime/runs/part3-live-full-v2/*.md

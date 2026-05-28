@@ -27,33 +27,19 @@ class AdapterTests(unittest.TestCase):
         self.assertEqual(
             set(ADAPTER_NAMES),
             {
-                "single_llm_baseline",
-                "corax",
                 "corax-live",
                 "corax-ablation",
             },
         )
-        self.assertEqual(set(DEFAULT_ADAPTER_NAMES), {"single_llm_baseline", "corax"})
+        self.assertEqual(set(DEFAULT_ADAPTER_NAMES), {"corax-ablation"})
         for name in ADAPTER_NAMES:
             self.assertEqual(build_adapter(name).name, name)
 
-    def test_legacy_adapters_are_not_public_build_targets(self) -> None:
+    def test_removed_adapters_are_not_public_build_targets(self) -> None:
         with self.assertRaisesRegex(ValueError, "Unknown adapter"):
-            build_adapter("darf")
+            build_adapter("legacy_rules")
         with self.assertRaisesRegex(ValueError, "Unknown adapter"):
-            build_adapter("darf-live")
-
-    def test_corax_adapter_runs_blind_brief_and_scan(self) -> None:
-        cases = {case.case_id: case for case in load_cases(CASES, root=ROOT)}
-        result = build_adapter("corax").review(cases["btc_future_return_feature"])
-        self.assertIn("lookahead", {finding.issue for finding in result.findings})
-        self.assertIn("strip_brief", result.raw_output["mcp_tools"])
-
-    def test_adapter_evaluation_is_json_ready(self) -> None:
-        cases = load_cases(CASES, root=ROOT)
-        result = evaluate_adapter(cases, "corax")
-        self.assertGreaterEqual(result["recall"], 0.8)
-        self.assertEqual(result["adapter"], "corax")
+            build_adapter("corax")
 
     def test_corax_live_adapter_maps_mock_verdict_and_writes_artifact(self) -> None:
         async def fake_reviewer(**kwargs: object) -> dict[str, object]:

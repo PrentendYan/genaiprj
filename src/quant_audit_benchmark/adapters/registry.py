@@ -4,14 +4,12 @@
 from __future__ import annotations
 
 from .base import ReviewerAdapter
-from .corax import CoraxOfflineAdapter
 from .corax_ablation import CoraxAblationAdapter
 from .corax_live import CoraxLiveAdapter
-from .deterministic import DeterministicAdapter
 
 
-DEFAULT_ADAPTER_NAMES = ("single_llm_baseline", "corax")
-ADAPTER_NAMES = (*DEFAULT_ADAPTER_NAMES, "corax-live", "corax-ablation")
+DEFAULT_ADAPTER_NAMES = ("corax-ablation",)
+ADAPTER_NAMES = (*DEFAULT_ADAPTER_NAMES, "corax-live")
 
 
 def build_adapter(
@@ -23,10 +21,6 @@ def build_adapter(
 ) -> ReviewerAdapter:
     """Build a reviewer adapter by public benchmark name."""
 
-    if name == "single_llm_baseline":
-        return DeterministicAdapter(name, profile="single_llm_baseline")
-    if name == "corax":
-        return CoraxOfflineAdapter()
     if name == "corax-live":
         return CoraxLiveAdapter(model=model, run_dir=run_dir)
     if name == "corax-ablation":

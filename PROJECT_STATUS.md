@@ -8,10 +8,9 @@ The project is now CORAX-only in its default runnable path. The final project st
 
 - Migrated CORAX MCP code, skills, references, schemas, and command notes into the repo.
 - Replaced personal-machine paths with configurable runtime paths.
-- Built a runnable benchmark scaffold with 45 labeled finance audit cases.
+- Built a focused benchmark scaffold with 9 labeled finance audit cases used in the live ablation.
 - Added real BTC, QuoteMedia, and notebook workflow fixtures.
 - Split submitted artifacts from annotations in `benchmark_cases/cases.json` and `benchmark_cases/annotations.json`.
-- Added offline adapters for the default path: `single_llm_baseline` and `corax`.
 - Added live CORAX adapters: `corax-live` and `corax-ablation`.
 - Added `corax-ablation` conditions for the main arms: `single_llm`, `blind_only`, `codex_codex`, and `codex_claude`.
 - Added producer-framing prompts in `benchmark_cases/corax_ablation_framing.json`.
@@ -20,12 +19,10 @@ The project is now CORAX-only in its default runnable path. The final project st
 
 ## Runnable Commands
 
-Offline benchmark:
+No-model validation:
 
 ```bash
 python -m unittest discover -s tests
-python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json
-python -m src.quant_audit_benchmark.cli --cases benchmark_cases/cases.json --adapter corax
 ```
 
 CORAX ablation smoke after local model access is available:
@@ -41,7 +38,7 @@ The full selected-case experiment commands are in `docs/corax_ablation_experimen
 ## Verified So Far
 
 - Benchmark tests pass without model credentials.
-- Offline benchmark remains reproducible without model credentials and no longer runs non-CORAX adapters by default.
+- Unit and mock-agent tests remain reproducible without model credentials.
 - A selected-case weak-model run completed for `single_llm`, `blind_only`, `codex_codex`, and `codex_claude`.
 - `single_llm`: precision 0.4615, recall 0.8571, F1 0.6000.
 - `blind_only`: precision 0.8571, recall 0.8571, F1 0.8571.

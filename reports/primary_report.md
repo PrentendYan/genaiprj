@@ -2,7 +2,7 @@
 
 ## Abstract
 
-This project asks whether an agentic AI review workflow can catch finance research errors that make backtests look better than they are. The current main artifact is CORAX, a Codex-native adversarial audit workflow with a blind-brief step and a configurable second agent. We package it into a reproducible benchmark over 45 labeled finance audit cases and add a live ablation path with four arms: plain single reviewer, blind brief only, Codex-Codex dual agent, and Codex-Claude dual agent. All four arms have been run on a selected nine-case stress set.
+This project asks whether an agentic AI review workflow can catch finance research errors that make backtests look better than they are. The current main artifact is CORAX, a Codex-native adversarial audit workflow with a blind-brief step and a configurable second agent. We package it into a 9-case finance audit benchmark and run a live ablation with four arms: plain single reviewer, blind brief only, Codex-Codex dual agent, and Codex-Claude dual agent.
 
 ## Problem
 
@@ -30,11 +30,11 @@ The "Santa Method" in this repo means Codex-on-Codex adversarial review. A Codex
 
 ## Benchmark
 
-The benchmark contains 45 labeled cases. Each case has a submitted artifact, a source type, a real-data or real-workflow fixture, and a separate annotation with expected issues and rationale. The project uses:
+The benchmark contains the 9 labeled cases used in the live ablation. Each case has a submitted artifact, a source type, a real-data or real-workflow fixture, and a separate annotation with expected issues and rationale. The project uses:
 
 - a bundled BTC historical sample,
 - a QuoteMedia stock sample,
-- two real tutorial notebook workflows,
+- one real tutorial notebook workflow,
 - hand-authored finance snippets that target specific audit failures.
 
 The loader validates fixture existence, empty data, duplicate case IDs, missing labels, and unknown issue types. If a file is missing, the benchmark raises a clear error rather than replacing the source.
@@ -50,7 +50,7 @@ The live ablation adapter is `corax-ablation`. It tests four conditions against 
 | `codex_codex` | Codex meta-reviewer | yes | runnable dual-agent stress test |
 | `codex_claude` | Claude Sentinel | yes | cross-model dual-agent stress test |
 
-This ablation is a better match for the project design than the earlier offline-vs-live comparison. Offline adapters are still useful sanity checks, but they cannot test the core CORAX mechanism because they do not exercise the model reviewer, the framing removal, or the Sentinel handoff.
+This ablation is the project mechanism under test because it exercises the model reviewer, the framing removal, and the Sentinel handoff.
 
 The planned final experiment uses a weak, low-cost reviewer model for every condition. That makes the experiment a stress test for architecture: if the plain reviewer is shallow or easily influenced by producer framing, the dual-agent paths should have more room to show value. The comparison remains fair because the same reviewer model, case set, labels, and scoring code are used across conditions.
 
@@ -71,22 +71,11 @@ The gate outcomes support the second-agent part of the architecture. `single_llm
 
 The curated result summary is in `reports/corax_ablation_selected_20260527.md`.
 
-## Offline Sanity Check
-
-The repo still includes a no-credential offline sanity path over all 45 cases. This check proves that the benchmark, labels, fixtures, and scoring code run from a clone without model access. It does not test the live CORAX mechanism.
-
-| Adapter | Mode | Precision | Recall | F1 | TP | FP | FN | Failures |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| `single_llm_baseline` | offline | 1.0000 | 0.5556 | 0.7143 | 20 | 0 | 16 | 0 |
-| `corax` | offline | 0.9459 | 0.9722 | 0.9589 | 35 | 2 | 1 | 0 |
-
-The offline `corax` adapter is scanner-backed. It is useful for reproducibility, but the selected-case live ablation is the evidence for the agent workflow.
-
 ## Case Analysis
 
 ### Transaction Cost Variable Declared But Not Applied
 
-`cost_variable_declared_not_applied` is the most important case for the current version. A rule scanner sees a cost variable and can be fooled into thinking costs are handled. The live CORAX reviewer follows the data flow: the cost variable is declared, then never subtracted from `strategy_return`. This is the clearest example of a semantic audit capability that the project wants to demonstrate.
+`cost_variable_declared_not_applied` is the most important case for the current version. A shallow keyword check can see a cost variable and think costs are handled. The live CORAX reviewer follows the data flow: the cost variable is declared, then never subtracted from `strategy_return`. This is the clearest example of a semantic audit capability that the project wants to demonstrate.
 
 ### Dual Codex Adds Review Discipline
 
@@ -98,7 +87,7 @@ The selected-case `codex_codex` and `codex_claude` runs show the role of the sec
 
 ## What Works
 
-The repository is runnable from a fresh clone for offline evaluation. It also has mock tests for the live ablation path, so the core logic can be verified without spending model budget. The selected-case live run confirms that the Codex reviewer can catch a semantic transaction-cost bug and that the blind brief changes reviewer behavior in the expected direction.
+The repository is runnable from a fresh clone for unit and mock-agent validation. The selected-case live run confirms that the Codex reviewer can catch a semantic transaction-cost bug and that the blind brief changes reviewer behavior in the expected direction.
 
 ## What Still Needs Work
 

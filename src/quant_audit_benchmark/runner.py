@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .adapters import build_adapter
-from .auditor import AuditCase, _safe_div
+from .auditor import AuditCase
 
 
 def evaluate_adapter(
@@ -105,3 +105,9 @@ def _write_aggregate_if_live(adapter: object, aggregate: dict[str, object]) -> N
     path = Path(run_dir) / filename
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(aggregate, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def _safe_div(numerator: float, denominator: float) -> float:
+    if denominator == 0:
+        return 0.0
+    return numerator / denominator

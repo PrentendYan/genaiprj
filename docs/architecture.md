@@ -47,10 +47,11 @@ When a second agent is enabled, the adapter either calls a second Codex meta-rev
 | Condition | Second agent | Blind brief? | Current status |
 |---|---|---:|---|
 | `single_llm` | none | no | baseline |
+| `blind_only` | none | yes | completed on the selected set |
 | `codex_codex` | Codex meta-reviewer | yes | completed on the selected set |
 | `codex_claude` | Claude Sentinel | yes | completed on the selected set |
 
-This is the project mechanism under test. The offline adapter path remains only a reproducibility sanity check.
+This is the project mechanism under test.
 
 ## Adapter Interface
 
@@ -72,12 +73,10 @@ The runner compares `findings` to `benchmark_cases/annotations.json`.
 
 ## Public Adapters
 
-- `single_llm_baseline`: deterministic naive rule baseline.
-- `corax`: offline CORAX scanner-backed adapter with blind-brief stripping.
 - `corax-live`: single-pass live Codex reviewer.
 - `corax-ablation`: main CORAX ablation path.
 
-The default CLI run uses only `single_llm_baseline` and `corax`. Live adapters require local CLI credentials.
+The default CLI run uses `corax-ablation`. Live adapters require local CLI credentials.
 
 ## Runtime Artifacts
 

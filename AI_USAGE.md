@@ -5,7 +5,7 @@ We used AI coding assistants throughout the project to help design the project s
 AI tools helped with:
 
 - Translating local CORAX design notes into a clean course-project artifact.
-- Implementing and testing the offline benchmark harness, live reviewer adapters, and CORAX ablation adapter.
+- Implementing and testing the benchmark loader, live reviewer adapters, mock-agent tests, and CORAX ablation adapter.
 - Drafting the weak-model ablation plan for `single_llm`, `codex_codex`, and `codex_claude`.
 - Drafting the README, the project status notes, the final report (`reports/primary_report.md`), and the audience-facing static page (`site/index.html`).
 
@@ -15,7 +15,7 @@ Human checks included:
 - Deciding which cases to feature in the CORAX ablation, and how to frame weak-model results as a stress test rather than a universal model-quality claim.
 - Keeping secrets, API keys, local MCP state, and personal configuration files out of the submission, including removing a teammate's local file paths from the data-source notes.
 - Verifying that the benchmark does not silently fall back to synthetic data.
-- Running deterministic and mock tests and inspecting generated metrics for consistency.
+- Running unit and mock-agent tests and inspecting generated metrics for consistency.
 - Confirming that the report distinguishes pilot smoke evidence from the planned final selected-case ablation.
 
 The AI-generated outputs are not treated as source truth. The labeled benchmark cases, final claims, and oral-defense explanations are reviewed by the student team before submission. Live model results are non-deterministic and should be reported as representative runs rather than exact fixed values.

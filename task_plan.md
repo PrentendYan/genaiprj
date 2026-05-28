@@ -4,7 +4,7 @@
 
 ## Tasks
 
-- [x] Keep the existing 45-case benchmark runnable from a fresh clone.
+- [x] Keep the focused 9-case CORAX benchmark runnable from a fresh clone.
 - [x] Refocus README, report, site, and architecture around CORAX.
 - [x] Add `corax-ablation` with `single_llm`, `codex_codex`, and `codex_claude`.
 - [x] Add mock tests for blind brief, Sentinel handoff, and gate behavior.
