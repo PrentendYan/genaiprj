@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CORAX: Can an AI Agent Audit Quant Research?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,400&family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4efe6;
+    --paper-2:#ece5d6;
+    --ink:#211c17;
+    --ink-soft:#4a4138;
+    --rust:#9a3b26;
+    --rust-deep:#7a2e1d;
+    --olive:#5b6037;
+    --gold:#b8893b;
+    --line:#cbc0a8;
+    --green:#3f6f4a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Spectral',Georgia,serif;
+    font-size:18px;line-height:1.68;
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(circle at 12% 8%, rgba(154,59,38,.04), transparent 40%),
+      radial-gradient(circle at 88% 92%, rgba(91,96,55,.05), transparent 45%);
+    background-attachment:fixed;
+  }
+  /* grain */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.025;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:920px;margin:0 auto;padding:0 28px;}
+
+  /* ---- HERO ---- */
+  header.hero{
+    padding:78px 0 46px;border-bottom:2px solid var(--ink);
+    position:relative;
+  }
+  .kicker{
+    font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.32em;
+    text-transform:uppercase;color:var(--rust);font-weight:500;margin-bottom:22px;
+  }
+  h1{
+    font-family:'Fraunces',serif;font-weight:900;font-size:clamp(40px,7vw,76px);
+    line-height:.98;letter-spacing:-.02em;color:var(--ink);
+    margin-bottom:26px;
+  }
+  h1 em{font-style:italic;color:var(--rust);}
+  .standfirst{
+    font-size:21px;line-height:1.5;max-width:620px;color:var(--ink-soft);
+    font-weight:400;
+  }
+  .meta-row{
+    margin-top:30px;display:flex;flex-wrap:wrap;gap:10px;
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.05em;
+  }
+  .tag{
+    border:1px solid var(--line);padding:5px 11px;border-radius:2px;
+    color:var(--ink-soft);background:rgba(255,255,255,.3);
+  }
+  .tag b{color:var(--rust-deep);font-weight:700;}
+
+  /* ---- THE HOOK: headline stat ---- */
+  .hook{
+    margin:54px 0;padding:42px 40px;
+    background:var(--ink);color:var(--paper);border-radius:4px;
+    position:relative;overflow:hidden;
+  }
+  .hook::after{
+    content:"F1";position:absolute;right:-10px;bottom:-44px;
+    font-family:'Fraunces',serif;font-weight:900;font-size:240px;
+    color:rgba(244,239,230,.05);line-height:1;pointer-events:none;
+  }
+  .hook .lbl{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--gold);margin-bottom:18px;}
+  .hook .jump{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;position:relative;z-index:2;}
+  .hook .num{font-family:'Fraunces',serif;font-weight:900;font-size:64px;line-height:1;}
+  .hook .num.dim{color:rgba(244,239,230,.4);}
+  .hook .arrow{font-family:'JetBrains Mono',monospace;font-size:30px;color:var(--gold);}
+  .hook .num.hot{color:#f0b35a;}
+  .hook p{margin-top:20px;font-size:18px;color:rgba(244,239,230,.82);max-width:600px;position:relative;z-index:2;}
+  .hook p b{color:var(--paper);font-weight:600;}
+
+  /* ---- sections ---- */
+  section{padding:30px 0;}
+  h2{
+    font-family:'Fraunces',serif;font-weight:600;font-size:clamp(26px,4vw,34px);
+    letter-spacing:-.01em;margin-bottom:8px;color:var(--ink);
+    display:flex;align-items:baseline;gap:14px;
+  }
+  h2 .no{
+    font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;
+    color:var(--rust);border:1.5px solid var(--rust);border-radius:50%;
+    width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;
+    flex-shrink:0;transform:translateY(-2px);
+  }
+  h2 + .sub{color:var(--ink-soft);font-size:16px;margin:-2px 0 22px 48px;font-style:italic;}
+  h3{font-family:'Fraunces',serif;font-weight:600;font-size:21px;margin:26px 0 8px;color:var(--rust-deep);}
+  p.body{margin:14px 0;}
+  p.body b{font-weight:600;color:var(--ink);}
+  code{font-family:'JetBrains Mono',monospace;font-size:.82em;background:var(--paper-2);
+    padding:1.5px 6px;border-radius:3px;color:var(--rust-deep);}
+  .divider{height:1px;background:var(--line);margin:8px 0;border:0;}
+
+  /* bug list */
+  .bugs{list-style:none;margin:18px 0;border-top:1px solid var(--line);}
+  .bugs li{padding:13px 0;border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:baseline;}
+  .bugs .bname{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;
+    color:var(--rust);min-width:200px;letter-spacing:-.01em;}
+  .bugs .bdesc{color:var(--ink-soft);font-size:16px;}
+
+  /* ---- results table ---- */
+  .tablecard{background:rgba(255,255,255,.42);border:1px solid var(--line);border-radius:5px;
+    overflow:hidden;margin:24px 0;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  thead th{font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.08em;
+    text-transform:uppercase;text-align:right;padding:14px 12px;color:var(--ink-soft);
+    border-bottom:1.5px solid var(--ink);background:var(--paper-2);}
+  thead th:first-child{text-align:left;}
+  tbody td{padding:13px 12px;text-align:right;border-bottom:1px solid var(--line);
+    font-family:'JetBrains Mono',monospace;font-size:13.5px;}
+  tbody td:first-child{text-align:left;font-weight:700;color:var(--ink);}
+  tbody tr:last-child td{border-bottom:0;}
+  tbody tr.base{background:rgba(154,59,38,.06);}
+  .f1cell{position:relative;font-weight:700;}
+  .bar{display:inline-block;height:7px;border-radius:4px;background:var(--rust);
+    vertical-align:middle;margin-right:8px;}
+  .yes{color:var(--green);font-weight:700;}
+  .no{color:var(--ink-soft);opacity:.5;}
+  .caption{font-size:13px;color:var(--ink-soft);font-style:italic;margin:10px 2px 0;font-family:'Spectral';}
+
+  /* finding callouts */
+  .finding{border-left:4px solid var(--rust);padding:4px 0 4px 24px;margin:26px 0;}
+  .finding .ftag{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--rust);font-weight:700;margin-bottom:6px;}
+  .finding h3{margin-top:2px;color:var(--ink);}
+
+  /* gate viz */
+  .gate-wrap{margin:22px 0;}
+  .gaterow{display:grid;grid-template-columns:130px 1fr;gap:16px;align-items:center;margin:11px 0;}
+  .gaterow .glabel{font-family:'JetBrains Mono',monospace;font-size:12.5px;font-weight:700;color:var(--ink);}
+  .gbar{display:flex;height:30px;border-radius:3px;overflow:hidden;border:1px solid var(--line);}
+  .gseg{display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;
+    font-size:11px;font-weight:700;color:#fff;transition:flex .4s;}
+  .seg-fail{background:var(--rust);}
+  .seg-needs{background:var(--gold);}
+  .seg-pass{background:var(--green);}
+  .glegend{display:flex;gap:20px;margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft);flex-wrap:wrap;}
+  .glegend span{display:flex;align-items:center;gap:7px;}
+  .dot{width:11px;height:11px;border-radius:2px;display:inline-block;}
+
+  /* flow diagram */
+  .flow{margin:26px 0;background:rgba(255,255,255,.4);border:1px solid var(--line);
+    border-radius:5px;padding:30px 20px;overflow-x:auto;}
+  .flow svg{display:block;margin:0 auto;max-width:100%;height:auto;}
+
+  /* case grid */
+  .cases{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:22px 0;}
+  .ccard{background:rgba(255,255,255,.45);border:1px solid var(--line);border-radius:5px;padding:20px 22px;}
+  .ccard .cid{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--rust-deep);
+    font-weight:700;margin-bottom:9px;word-break:break-all;}
+  .ccard h4{font-family:'Fraunces',serif;font-size:17px;font-weight:600;margin-bottom:8px;color:var(--ink);}
+  .ccard p{font-size:14.5px;color:var(--ink-soft);line-height:1.55;}
+  .ccard .verdict{display:inline-block;margin-top:11px;font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;font-weight:700;letter-spacing:.05em;padding:3px 9px;border-radius:3px;}
+  .v-win{background:rgba(63,111,74,.15);color:var(--green);border:1px solid rgba(63,111,74,.4);}
+  .v-miss{background:rgba(154,59,38,.1);color:var(--rust-deep);border:1px solid rgba(154,59,38,.35);}
+  .v-edge{background:rgba(184,137,59,.15);color:var(--gold);border:1px solid rgba(184,137,59,.45);}
+
+  /* two-col split for AI/human */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:24px 0;
+    border:1px solid var(--line);border-radius:5px;overflow:hidden;}
+  .split>div{padding:26px 26px;}
+  .split .ai{background:rgba(255,255,255,.4);border-right:1px solid var(--line);}
+  .split .hu{background:rgba(154,59,38,.04);}
+  .split .stitle{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;
+    text-transform:uppercase;font-weight:700;margin-bottom:14px;}
+  .split .ai .stitle{color:var(--olive);}
+  .split .hu .stitle{color:var(--rust);}
+  .split p{font-size:15px;color:var(--ink-soft);line-height:1.6;}
+
+  footer{border-top:2px solid var(--ink);margin-top:50px;padding:34px 0 60px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-soft);letter-spacing:.04em;}
+  footer b{color:var(--ink);}
+
+  @media(max-width:680px){
+    body{font-size:16.5px;}
+    .cases,.split{grid-template-columns:1fr;}
+    .split .ai{border-right:0;border-bottom:1px solid var(--line);}
+    .bugs li{flex-direction:column;gap:3px;}
+    .bugs .bname{min-width:0;}
+    .gaterow{grid-template-columns:1fr;gap:6px;}
+    .hook{padding:30px 24px;}
+    .hook .num{font-size:48px;}
+    h2 + .sub{margin-left:0;}
+  }
+  /* progressive enhancement: visible by default; JS adds .anim to enable hide+reveal */
+  .reveal.anim{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease;}
+  .reveal.anim.in{opacity:1;transform:none;}
+  @media(prefers-reduced-motion:reduce){.reveal.anim{opacity:1!important;transform:none!important;}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="kicker">FINM 33200 · LLMs in Finance · Ablation Study</div>
+    <h1>Can an AI agent <em>audit</em> quant research?</h1>
+    <p class="standfirst">A one-line error can turn a weak strategy into a persuasive chart. We built CORAX, an adversarial AI audit workflow, and ablated it component by component to find out what actually makes an automated reviewer reliable.</p>
+    <div class="meta-row">
+      <span class="tag"><b>9</b>&nbsp; stress-test cases</span>
+      <span class="tag"><b>4</b>&nbsp; configurations</span>
+      <span class="tag"><b>2</b>&nbsp; model families</span>
+      <span class="tag">reviewer: <b>gpt-5.4-mini</b></span>
+      <span class="tag">sentinel: <b>claude-haiku-4-5</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- THE HOOK -->
+  <div class="hook reveal">
+    <div class="lbl">The headline result</div>
+    <div class="jump">
+      <span class="num dim">0.60</span>
+      <span class="arrow">───▶</span>
+      <span class="num hot">0.86</span>
+    </div>
+    <p>Stripping the producer's self-promotional framing before review raised audit F1 by <b>26 points</b>. Adding a second AI agent on top did <b>not</b> raise it further; instead it changed how cautiously the system gates borderline work. <b>Framing control mattered more than a second opinion.</b></p>
+  </div>
+
+  <!-- 1. BACKGROUND -->
+  <section class="reveal">
+    <h2><span class="no">1</span> The problem</h2>
+    <p class="sub">The failure modes an automated auditor has to catch.</p>
+    <p class="body">Quant research is fragile. The same handful of mistakes show up again and again in backtests and in AI-generated research code, and each one can make a strategy look better than it is:</p>
+    <ul class="bugs">
+      <li><span class="bname">lookahead</span><span class="bdesc">building features from future returns or a negative shift</span></li>
+      <li><span class="bname">normalization_leakage</span><span class="bdesc">normalizing across the full sample before the train/test split</span></li>
+      <li><span class="bname">temporal_split</span><span class="bdesc">applying a random shuffle split to time-series data</span></li>
+      <li><span class="bname">missing_costs</span><span class="bdesc">reporting returns and Sharpe before deducting trading costs</span></li>
+      <li><span class="bname">unsupported_claim</span><span class="bdesc">concluding outperformance with no baseline or robustness check</span></li>
+    </ul>
+    <p class="body">CORAX treats an AI reviewer as a research auditor: it reads a submitted artifact, emits structured findings, and those findings are scored against human labels.</p>
+  </section>
+
+  <hr class="divider">
+
+  <!-- 2. CORAX DESIGN -->
+  <section class="reveal">
+    <h2><span class="no">2</span> How CORAX works</h2>
+    <p class="sub">Separate the producing, the reviewing, and the reviewing-of-the-review.</p>
+    <p class="body">The core idea is to structurally separate <b>production</b>, <b>review</b>, and <b>meta-review</b>, so the reviewer is not swayed by the author's language and no single agent decides an audit alone.</p>
+
+    <div class="flow">
+      <svg viewBox="0 0 760 470" xmlns="http://www.w3.org/2000/svg" font-family="JetBrains Mono, monospace">
+        <defs>
+          <marker id="ar" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#7a2e1d"/>
+          </marker>
+          <style>
+            .bx{fill:#fff;stroke:#cbc0a8;stroke-width:1.5;rx:5;}
+            .bx2{fill:#211c17;stroke:#211c17;}
+            .bxr{fill:#f4efe6;stroke:#9a3b26;stroke-width:1.5;}
+            .ln{stroke:#7a2e1d;stroke-width:1.5;fill:none;}
+            .t{fill:#211c17;font-size:13px;font-weight:700;}
+            .tw{fill:#f4efe6;font-size:13px;font-weight:700;}
+            .ts{fill:#4a4138;font-size:10.5px;}
+            .opt{fill:#9a3b26;font-size:10px;font-style:italic;}
+          </style>
+        </defs>
+
+        <rect class="bx" x="270" y="10" width="220" height="52" rx="5"/>
+        <text class="t" x="380" y="32" text-anchor="middle">Benchmark case + claim</text>
+        <text class="ts" x="380" y="50" text-anchor="middle">code under review</text>
+        <line class="ln" x1="380" y1="62" x2="380" y2="86" marker-end="url(#ar)"/>
+
+        <rect class="bxr" x="270" y="88" width="220" height="46" rx="5"/>
+        <text class="t" x="380" y="116" text-anchor="middle">Blind brief stripping</text>
+        <line class="ln" x1="380" y1="134" x2="380" y2="158" marker-end="url(#ar)"/>
+
+        <rect class="bx2" x="255" y="160" width="250" height="56" rx="5"/>
+        <text class="tw" x="380" y="183" text-anchor="middle">Codex Reviewer</text>
+        <text class="tw" x="380" y="201" text-anchor="middle" font-size="11" opacity=".7">gpt-5.4-mini → verdict JSON</text>
+        <line class="ln" x1="380" y1="216" x2="380" y2="250" marker-end="url(#ar)"/>
+        <text class="opt" x="392" y="238">optional second agent</text>
+
+        <line class="ln" x1="380" y1="250" x2="200" y2="278" marker-end="url(#ar)"/>
+        <line class="ln" x1="380" y1="250" x2="560" y2="278" marker-end="url(#ar)"/>
+
+        <rect class="bx" x="90" y="280" width="220" height="56" rx="5"/>
+        <text class="t" x="200" y="303" text-anchor="middle">Codex meta-reviewer</text>
+        <text class="ts" x="200" y="321" text-anchor="middle">same family</text>
+
+        <rect class="bxr" x="450" y="280" width="220" height="56" rx="5"/>
+        <text class="t" x="560" y="303" text-anchor="middle">Claude Sentinel</text>
+        <text class="ts" x="560" y="321" text-anchor="middle">cross family</text>
+
+        <line class="ln" x1="200" y1="336" x2="370" y2="380" marker-end="url(#ar)"/>
+        <line class="ln" x1="560" y1="336" x2="390" y2="380" marker-end="url(#ar)"/>
+
+        <rect class="bx2" x="260" y="382" width="240" height="68" rx="5"/>
+        <text class="tw" x="380" y="408" text-anchor="middle">Gate decision</text>
+        <text class="tw" x="380" y="428" text-anchor="middle" font-size="11" opacity=".7">PASS / FAIL / NEEDS_REVIEW</text>
+      </svg>
+    </div>
+
+    <h3>The blind brief</h3>
+    <p class="body">Before the reviewer sees anything, an independent module rewrites the submission to <b>describe only the code facts</b>: every "remarkable Sharpe" or "outperforms any baseline" is removed, so the reviewer judges the code, not the sales pitch.</p>
+    <h3>The second agent</h3>
+    <p class="body">An optional meta-reviewer inspects the <i>reviewer's</i> output for groupthink, missed concerns, and over-confidence. It comes either from the <b>same model family</b> (Codex) or a <b>different one</b> (Claude Sentinel), the latter giving a genuinely independent perspective.</p>
+  </section>
+
+  <hr class="divider">
+
+  <!-- 3. BENCHMARK -->
+  <section class="reveal">
+    <h2><span class="no">3</span> The benchmark</h2>
+    <p class="sub">Nine cases, every issue type, plus traps.</p>
+    <p class="body">The ablation runs on <b>nine human-labeled cases</b> drawn from real fixtures: a BTC sample, a QuoteMedia stock sample, and two tutorial notebooks. They cover every issue type and deliberately include <b>clean near-miss controls</b> (code that looks suspicious but is correct) and one <b>boundary case whose label is genuinely ambiguous</b>, to test whether the reviewer is fooled by surface patterns. Submitted code and answer labels are stored separately, so the reviewer never sees the key.</p>
+  </section>
+
+  <hr class="divider">
+
+  <!-- 4 + 5 RESULTS -->
+  <section class="reveal">
+    <h2><span class="no" style="width:auto;border-radius:18px;padding:0 11px">4·5</span> The ablation &amp; results</h2>
+    <p class="sub">Toggle one component at a time; read each component's contribution off the gap.</p>
+    <p class="body">CORAX has two switchable components: the <b>blind brief</b> and the <b>second agent</b>. Four configurations form a cumulative ladder, where every step changes exactly one thing, so each performance gap is that component's net contribution. All four use the same reviewer model, cases, labels, and scoring code. A deliberately <b>weak, cheap model</b> is used throughout: it keeps a multi-agent experiment affordable to re-run, and it turns the study into an architectural stress test.</p>
+
+    <div class="tablecard">
+      <table>
+        <thead>
+          <tr><th>Configuration</th><th>Blind</th><th>2nd agent</th><th>Prec.</th><th>Recall</th><th>F1</th><th>FP</th></tr>
+        </thead>
+        <tbody>
+          <tr class="base">
+            <td>single_llm</td><td class="no">·</td><td class="no">·</td>
+            <td>0.46</td><td>0.86</td>
+            <td class="f1cell"><span class="bar" style="width:42px;background:#b9a98c"></span>0.60</td>
+            <td>7</td>
+          </tr>
+          <tr>
+            <td>blind_only</td><td class="yes">✓</td><td class="no">·</td>
+            <td>0.86</td><td>0.86</td>
+            <td class="f1cell"><span class="bar" style="width:60px"></span>0.86</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>codex_codex</td><td class="yes">✓</td><td>Codex</td>
+            <td>0.86</td><td>0.86</td>
+            <td class="f1cell"><span class="bar" style="width:60px"></span>0.86</td>
+            <td>1</td>
+          </tr>
+          <tr>
+            <td>codex_claude</td><td class="yes">✓</td><td>Claude</td>
+            <td>0.86</td><td>0.86</td>
+            <td class="f1cell"><span class="bar" style="width:60px"></span>0.86</td>
+            <td>1</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="caption">Recall is flat at 0.86 across every row, so the gains and the differences live entirely in precision and in gating behavior.</p>
+
+    <div class="finding">
+      <div class="ftag">Finding 1</div>
+      <h3>The F1 gain comes almost entirely from the blind brief</h3>
+      <p class="body">From <code>single_llm</code> to <code>blind_only</code>, F1 jumps 0.60 → 0.86, and the only thing that changed is the blind brief. Recall never moves: the brief makes the reviewer neither find nor miss any real bug. The entire gain is precision: false positives collapse from <b>7 to 1</b>. All six eliminated false positives were <code>unsupported_claim</code> errors triggered by the producer's bragging. The brief works not by making the reviewer smarter, but by <b>removing the input that misled it</b>.</p>
+    </div>
+
+    <div class="finding">
+      <div class="ftag">Finding 2</div>
+      <h3>The second agent doesn't change F1, it changes the gate</h3>
+      <p class="body">Adding a second agent leaves precision, recall, and F1 untouched at 0.86. What it changes is <b>where each case is routed</b>. Without a second agent, the system only ever says PASS or FAIL. The cross-family Claude Sentinel, free of Codex's blind spots, escalates far more borderline cases to human review instead of letting a weak reviewer decide alone.</p>
+    </div>
+
+    <div class="gate-wrap">
+      <div class="gaterow">
+        <span class="glabel">single_llm</span>
+        <div class="gbar"><div class="gseg seg-fail" style="flex:7">7</div><div class="gseg seg-pass" style="flex:2">2</div></div>
+      </div>
+      <div class="gaterow">
+        <span class="glabel">blind_only</span>
+        <div class="gbar"><div class="gseg seg-fail" style="flex:7">7</div><div class="gseg seg-pass" style="flex:2">2</div></div>
+      </div>
+      <div class="gaterow">
+        <span class="glabel">codex_codex</span>
+        <div class="gbar"><div class="gseg seg-fail" style="flex:6">6</div><div class="gseg seg-needs" style="flex:2">2</div><div class="gseg seg-pass" style="flex:1">1</div></div>
+      </div>
+      <div class="gaterow">
+        <span class="glabel">codex_claude</span>
+        <div class="gbar"><div class="gseg seg-fail" style="flex:2">2</div><div class="gseg seg-needs" style="flex:7">7</div></div>
+      </div>
+      <div class="glegend">
+        <span><i class="dot seg-fail"></i> FAIL</span>
+        <span><i class="dot seg-needs"></i> NEEDS_REVIEW</span>
+        <span><i class="dot seg-pass"></i> PASS</span>
+      </div>
+    </div>
+    <p class="caption">Gate distribution over the 9 cases. The cross-family configuration converts almost everything into a human-review escalation, i.e. more conservative audit discipline at identical F1.</p>
+  </section>
+
+  <hr class="divider">
+
+  <!-- 6. CASE ANALYSIS -->
+  <section class="reveal">
+    <h2><span class="no">6</span> Cases that tell the story</h2>
+    <p class="sub">Where the reviewer shines, stumbles, and hits a wall.</p>
+    <div class="cases">
+      <div class="ccard">
+        <div class="cid">cost_variable_declared_not_applied</div>
+        <h4>The semantic win</h4>
+        <p>Code declares a <code>transaction_cost_bps</code> variable (making the backtest look cost-aware) but never subtracts it from returns. A keyword scanner is fooled. All four configurations caught it, because the reviewer follows whether the variable actually affects the calculation.</p>
+        <span class="verdict v-win">✓ CAUGHT BY ALL</span>
+      </div>
+      <div class="ccard">
+        <div class="cid">quotemedia_future_winner_signal</div>
+        <h4>The partial miss</h4>
+        <p>Labeled with two issues. Every configuration catches the lookahead bias, but none deducts the missing trading costs. A second agent makes gating more conservative, but it can't rescue an omission the primary reviewer misses outright.</p>
+        <span class="verdict v-miss">◐ HALF CAUGHT</span>
+      </div>
+      <div class="ccard">
+        <div class="cid">honest_shifted_momentum · …scaler_clean</div>
+        <h4>The clean controls</h4>
+        <p>Two negative-label controls with no planted errors. Both pass cleanly under every configuration: evidence that the reviewer isn't just biased toward flagging everything that looks technical.</p>
+        <span class="verdict v-win">✓ CORRECTLY PASSED</span>
+      </div>
+      <div class="ccard">
+        <div class="cid">notebook_…turnover_alignment_ambiguous</div>
+        <h4>The boundary case</h4>
+        <p>Labeled clean, but every configuration flags it as lookahead. Its negative shift aligns a cost to its trade date rather than building a feature, a distinction that needs domain knowledge the weak reviewer doesn't reliably apply. The benchmark's open problem.</p>
+        <span class="verdict v-edge">△ ALL MISJUDGED</span>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- 7. AI / HUMAN -->
+  <section class="reveal">
+    <h2><span class="no">7</span> What AI can do / what humans must do</h2>
+    <div class="split">
+      <div class="ai">
+        <div class="stitle">▷ What AI can do</div>
+        <p>Act as a high-throughput first-pass auditor: read code, writeups, and notebook fragments, and flag suspicious patterns. It goes beyond keyword matching: in the cost case it followed the data flow to catch a semantic implementation error, narrowing where human reviewers need to look.</p>
+      </div>
+      <div class="hu">
+        <div class="stitle">◆ What humans must do</div>
+        <p>Decide whether flagged code is <i>actually</i> wrong in a financial setting; define which mistakes count as failures versus defensible conventions; build and validate the benchmark and its near-miss controls; and interpret findings, where a model flag is evidence for review, never proof that a strategy is valid or invalid.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <b>CORAX</b> &nbsp;·&nbsp; Codex-Orchestrated Research Audit eXaminer &nbsp;·&nbsp; A reproducible benchmark for AI-assisted quant research audit &nbsp;·&nbsp; FINM 33200, LLMs in Finance
+  </div>
+</footer>
+
+<script>
+  const els = document.querySelectorAll('.reveal');
+  els.forEach(el=>el.classList.add('anim'));
+  const io = new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+  },{threshold:.08, rootMargin:'0px 0px -40px 0px'});
+  els.forEach(el=>io.observe(el));
+  // safety net: if anything is still hidden after 4s, reveal it
+  setTimeout(()=>els.forEach(el=>el.classList.add('in')),4000);
+</script>
+</body>
+</html>
